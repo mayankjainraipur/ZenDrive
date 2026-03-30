@@ -47,3 +47,15 @@ google-services.json
 !.idea/codeStyles/
 !.idea/inspectionProfiles/
 !.idea/vcs.xml
+
+# Build outputs
+/build/
+/app/build/
+
+# APK files
+*.apk
+*.aab
+
+# Release folders
+/release/
+/app/release/
