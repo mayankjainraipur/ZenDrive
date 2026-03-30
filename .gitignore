@@ -1,0 +1,43 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Gradle
+.gradle/
+build/
+app/build/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+.gradletasknamecache
+
+# Mac
+.DS_Store
+
+# NDK
+obj/
+
+# Kotlin
+*.kotlin_module
+*.kotlin_dependencies_*.mf
+*.kotlin_builtins
+*.kotlin_metadata
+
+# Keystore
+*.jks
+*.keystore
+
+# Google Services
+google-services.json
