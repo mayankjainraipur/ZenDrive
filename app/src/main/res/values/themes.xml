@@ -31,8 +31,28 @@
         <item name="colorControlActivated">@color/accent</item>
         <item name="colorControlHighlight">@color/ripple</item>
 
+        <!-- Dialog themes -->
+        <item name="android:datePickerDialogTheme">@style/ZenDrive.DatePickerDialogTheme</item>
+
         <!-- FAB -->
         <item name="floatingActionButtonStyle">@style/ZenDrive.FAB</item>
+    </style>
+
+    <!-- Date Picker Dialog Theme -->
+    <style name="ZenDrive.DatePickerDialogTheme" parent="Theme.MaterialComponents.Dialog">
+        <item name="colorAccent">@color/accent</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="android:colorBackground">@color/surface</item>
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:buttonBarButtonStyle">@style/ZenDrive.DatePickerButton</item>
+    </style>
+
+    <style name="ZenDrive.DatePickerButton" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:textColor">@color/accent</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
     <!-- FAB style -->
