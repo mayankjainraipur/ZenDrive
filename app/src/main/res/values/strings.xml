@@ -1,3 +1,69 @@
 <resources>
     <string name="app_name">ZenDrive</string>
+
+    <!-- Home -->
+    <string name="home_title">My Vehicles</string>
+    <string name="home_empty">No vehicles yet.\nTap + to add your first ride.</string>
+    <string name="add_vehicle">Add Vehicle</string>
+
+    <!-- Vehicle form -->
+    <string name="vehicle_name">Vehicle Name</string>
+    <string name="vehicle_number">Vehicle Number</string>
+    <string name="vehicle_type">Type</string>
+    <string name="fuel_type">Fuel Type</string>
+    <string name="brand">Brand</string>
+    <string name="model">Model</string>
+    <string name="year">Year</string>
+    <string name="purchase_date">Purchase Date</string>
+    <string name="notes">Notes</string>
+    <string name="save">Save</string>
+    <string name="edit_vehicle">Edit Vehicle</string>
+
+    <!-- Vehicle detail -->
+    <string name="vehicle_events">Events</string>
+    <string name="no_events">No events recorded yet.</string>
+    <string name="add_event">Add Event</string>
+    <string name="delete_vehicle">Delete Vehicle</string>
+
+    <!-- Event form -->
+    <string name="event_type">Event Type</string>
+    <string name="event_title">Title</string>
+    <string name="description">Description</string>
+    <string name="date">Date</string>
+    <string name="cost">Cost</string>
+    <string name="odometer">Odometer</string>
+    <string name="next_due_date">Next Due Date</string>
+    <string name="add_meta_field">+ Add Extra Field</string>
+    <string name="meta_key">Key</string>
+    <string name="meta_value">Value</string>
+    <string name="save_event">Save Event</string>
+
+    <!-- Vehicle types -->
+    <string-array name="vehicle_types">
+        <item>Car</item>
+        <item>Bike</item>
+        <item>Truck</item>
+        <item>Auto</item>
+        <item>Bus</item>
+        <item>Other</item>
+    </string-array>
+
+    <!-- Fuel types -->
+    <string-array name="fuel_types">
+        <item>Petrol</item>
+        <item>Diesel</item>
+        <item>Electric</item>
+        <item>Hybrid</item>
+        <item>CNG</item>
+    </string-array>
+
+    <!-- Event types -->
+    <string-array name="event_types">
+        <item>Service</item>
+        <item>Insurance</item>
+        <item>Fuel</item>
+        <item>Repair</item>
+        <item>Tax</item>
+        <item>Other</item>
+    </string-array>
 </resources>
