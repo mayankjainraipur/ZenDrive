@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "CarLogClone"
+rootProject.name = "ZenDrive"
 include(":app")

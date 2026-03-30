@@ -1,4 +1,4 @@
-package com.example.carlog
+package com.example.zendrive
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity

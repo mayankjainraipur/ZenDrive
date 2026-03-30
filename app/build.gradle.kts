@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.carlog"
+    namespace = "com.example.zendrive"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.carlog"
+        applicationId = "com.example.zendrive"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

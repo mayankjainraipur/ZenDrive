@@ -1,4 +1,4 @@
-package com.example.carlog
+package com.example.zendrive
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
