@@ -3,8 +3,13 @@
 
     <!-- Home -->
     <string name="home_title">My Vehicles</string>
-    <string name="home_empty">No vehicles yet.\nTap + to add your first ride.</string>
-    <string name="add_vehicle">Add Vehicle</string>
+    <string name="company_name">ZenDrive</string>
+    <string name="company_logo">Company logo</string>
+    <string name="home_empty">No vehicles yet.\nUse Add vehicle below to add your first ride.</string>
+    <string name="add_vehicle">Add vehicle</string>
+    <string name="search_vehicles">Search vehicles</string>
+    <string name="search_vehicles_hint">Search by name, number, brand…</string>
+    <string name="no_search_matches">No vehicles match your search.</string>
 
     <!-- Vehicle form -->
     <string name="vehicle_name">Vehicle Name</string>
@@ -22,8 +27,10 @@
     <!-- Vehicle detail -->
     <string name="vehicle_events">Events</string>
     <string name="no_events">No events recorded yet.</string>
-    <string name="add_event">Add Event</string>
-    <string name="delete_vehicle">Delete Vehicle</string>
+    <string name="add_event">Add event</string>
+    <string name="delete_vehicle">Delete vehicle</string>
+    <string name="delete_vehicle_confirm">Delete \"%1$s\"? All events for this vehicle will be removed.</string>
+    <string name="action_delete">Delete</string>
 
     <!-- Event form -->
     <string name="event_type">Event Type</string>

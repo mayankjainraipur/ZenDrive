@@ -89,15 +89,36 @@
                                 android:fontFamily="monospace" />
                         </LinearLayout>
 
-                        <!-- Edit button -->
-                        <ImageButton
-                            android:id="@+id/btnEdit"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/edit_vehicle"
-                            android:src="@android:drawable/ic_menu_edit"
-                            app:tint="@color/text_secondary" />
+                        <!-- Edit (top) / delete (bottom), right column -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:orientation="vertical">
+
+                            <ImageButton
+                                android:id="@+id/btnEdit"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="@string/edit_vehicle"
+                                android:padding="2dp"
+                                android:scaleType="centerInside"
+                                android:src="@android:drawable/ic_menu_edit"
+                                app:tint="@color/text_secondary" />
+
+                            <ImageButton
+                                android:id="@+id/btnDeleteVehicle"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_marginTop="2dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="@string/delete_vehicle"
+                                android:padding="2dp"
+                                android:scaleType="centerInside"
+                                android:src="@android:drawable/ic_menu_delete"
+                                app:tint="@color/error" />
+                        </LinearLayout>
                     </LinearLayout>
 
                     <!-- Divider -->
@@ -291,16 +312,16 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- FAB: Add Event -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddEvent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
         android:contentDescription="@string/add_event"
-        android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="@color/fab_bg"
-        app:tint="@color/fab_icon" />
+        android:text="@string/add_event"
+        app:icon="@android:drawable/ic_menu_today"
+        app:iconTint="@color/fab_icon"
+        app:backgroundTint="@color/fab_bg" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
