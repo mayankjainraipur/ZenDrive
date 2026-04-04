@@ -36,4 +36,7 @@
     <color name="ripple">#2200D4AA</color>
     <color name="status_bar">#0F0F24</color>
     <color name="nav_bar">#0F0F24</color>
+
+    <!-- Launcher adaptive icon (shows at icon mask edges) -->
+    <color name="ic_launcher_adaptive_bg">#155E63</color>
 </resources>
