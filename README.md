@@ -110,10 +110,6 @@ The APK will be available at `app/build/outputs/apk/release/`
 - **Coroutines**: `org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3`
 - **Lifecycle Components**: `androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0`
 
-## Screenshots
-
-*(Add screenshots here showing the main vehicle list, vehicle details, and event forms)*
-
 ## Usage
 
 1. **Add a Vehicle**: Tap the + button on the main screen to add your first vehicle
@@ -142,7 +138,7 @@ The APK will be available at `app/build/outputs/apk/release/`
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE).
 
 ## Acknowledgments
 
@@ -150,7 +146,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Material Design 3 for modern UI
 - Room for local data persistence
 - Kotlin Coroutines for asynchronous programming
-
----
-
-**Note**: This is a personal project for learning Android development with modern architecture patterns. The app is fully functional but may require additional features for production use.
