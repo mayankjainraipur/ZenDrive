@@ -60,6 +60,11 @@ class VehicleDetailActivity : AppCompatActivity() {
         val tvEmptyEvents = findViewById<TextView>(R.id.tvEmptyEvents)
 
         eventAdapter = EventAdapter()
+        eventAdapter.onEventClick = { event ->
+            startActivity(
+                Intent(this, EventDetailActivity::class.java).putExtra("eventId", event.id)
+            )
+        }
         recyclerEvents.layoutManager = LinearLayoutManager(this)
         recyclerEvents.adapter = eventAdapter
 

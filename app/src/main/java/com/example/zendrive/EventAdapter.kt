@@ -13,6 +13,8 @@ import java.util.Locale
 
 class EventAdapter : ListAdapter<VehicleEvent, EventAdapter.VH>(DIFF) {
 
+    var onEventClick: ((VehicleEvent) -> Unit)? = null
+
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<VehicleEvent>() {
             override fun areItemsTheSame(a: VehicleEvent, b: VehicleEvent) = a.id == b.id
@@ -55,6 +57,13 @@ class EventAdapter : ListAdapter<VehicleEvent, EventAdapter.VH>(DIFF) {
             holder.odometer.text = "${String.format("%.0f", event.odometer)} km"
         } else {
             holder.odometer.visibility = View.GONE
+        }
+
+        holder.itemView.setOnClickListener {
+            val pos = holder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) {
+                onEventClick?.invoke(getItem(pos))
+            }
         }
     }
 }

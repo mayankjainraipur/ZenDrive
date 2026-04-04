@@ -44,6 +44,10 @@
     <string name="meta_key">Key</string>
     <string name="meta_value">Value</string>
     <string name="save_event">Save Event</string>
+    <string name="event_details">Event</string>
+    <string name="edit_event">Edit event</string>
+    <string name="extra_fields">Extra fields</string>
+    <string name="event_updated">Event updated</string>
 
     <!-- Vehicle types -->
     <string-array name="vehicle_types">

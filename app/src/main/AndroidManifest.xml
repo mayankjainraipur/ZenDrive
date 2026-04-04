@@ -23,6 +23,7 @@
         <activity android:name=".AddVehicleActivity" />
         <activity android:name=".VehicleDetailActivity" />
         <activity android:name=".AddEventActivity" />
+        <activity android:name=".EventDetailActivity" />
     </application>
 
 </manifest>
