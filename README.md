@@ -1,148 +1,127 @@
-# ZenDrive - Vehicle Maintenance Tracker
+<div align="center">
 
-ZenDrive is an Android application for tracking vehicle maintenance, fuel consumption, and service history. Built with modern Android development practices, it helps vehicle owners keep detailed records of their vehicles and maintenance events.
+# ZenDrive
+
+**Vehicle maintenance, fuel, and service history — tracked locally on Android.**
+
+[![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Android](https://img.shields.io/badge/Android-24%2B-3DDC84?style=flat&logo=android&logoColor=white)](https://developer.android.com/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+</div>
+
+ZenDrive is a native Android app for owners who want a clear record of vehicles, maintenance events, and costs — without relying on a cloud backend. Data stays on the device via a local **Room** database.
+
+---
+
+## Contents
+
+- [Features](#features)
+- [Tech stack](#tech-stack)
+- [Architecture](#architecture)
+- [Getting started](#getting-started)
+- [Project layout](#project-layout)
+- [Data model](#data-model)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## Features
 
-### Vehicle Management
-- Add and manage multiple vehicles
-- Track vehicle details: name, number, type, fuel type, brand, model, year
-- Record purchase date and odometer readings
-- Add notes for each vehicle
+| Area | What you get |
+|------|----------------|
+| **Vehicles** | Multiple vehicles; name, plate, type, fuel, brand, model, year; purchase date and odometer; notes |
+| **Events** | Service, insurance, fuel, repair, tax, and more; title, description, date, cost, odometer; optional next due date for recurring work |
+| **Metadata** | Custom key/value fields on events for extra detail |
+| **UX** | Material Design UI, list search, empty states, FAB for quick actions |
 
-### Maintenance Tracking
-- Log various types of events: service, insurance, fuel, repair, tax
-- Record event details: title, description, date, cost, odometer reading
-- Set next due dates for recurring events
-- Add custom metadata fields for additional information
+---
 
-### User Interface
-- Clean, modern Material Design interface
-- Empty state handling for better user experience
-- Intuitive navigation between vehicle list and details
-- Floating action button for quick actions
+## Tech stack
 
-## Tech Stack
+| Layer | Choice |
+|--------|--------|
+| Language | Kotlin |
+| UI | XML layouts, **Material Components**, **AppCompat**, **RecyclerView** |
+| Architecture | **MVVM** (`ViewModel` + **Kotlin `StateFlow`**) |
+| Persistence | **Room** (SQLite), KAPT |
+| Async | **Kotlin Coroutines** |
+| Min / target SDK | **24** / **34** (Java 17) |
 
-- **Language**: Kotlin
-- **Architecture**: MVVM (Model-View-ViewModel)
-- **Database**: Room with SQLite
-- **UI**: Jetpack Compose (Material Design 3)
-- **Coroutines**: For asynchronous operations
-- **Minimum SDK**: 24 (Android 7.0)
-- **Target SDK**: 34 (Android 14)
+Pinned library versions live in [`app/build.gradle.kts`](app/build.gradle.kts).
 
-## Project Structure
+---
 
-```
-app/src/main/java/com/example/zendrive/
-├── MainActivity.kt              # Main activity with vehicle list
-├── AddVehicleActivity.kt        # Add/edit vehicle form
-├── VehicleDetailActivity.kt     # Vehicle details and events
-├── AddEventActivity.kt          # Add/edit event form
-├── AppDatabase.kt              # Room database setup and entities
-├── VehicleDao.kt               # Data access object for vehicles
-├── LogViewModel.kt             # ViewModel for data handling
-├── ViewModelFactory.kt         # Factory for ViewModel creation
-├── VehicleAdapter.kt           # RecyclerView adapter for vehicles
-└── EventAdapter.kt             # RecyclerView adapter for events
-```
+## Architecture
 
-## Database Schema
+- **UI:** Activities host screens; adapters bind `RecyclerView` rows.
+- **State:** `LogViewModel` coordinates reads/writes through DAOs.
+- **Data:** Room entities (`Vehicle`, `VehicleEvent`, `EventMeta`) with foreign keys where needed.
 
-### Vehicle Entity
-- `id`: Primary key (auto-generated)
-- `name`: Vehicle name
-- `vehicleNumber`: License plate number
-- `type`: Vehicle type (car, bike, truck, etc.)
-- `fuelType`: Fuel type (petrol, diesel, electric, etc.)
-- `brand`: Manufacturer brand
-- `model`: Vehicle model
-- `year`: Manufacturing year
-- `purchaseDate`: Purchase date (epoch millis)
-- `odometerReading`: Current odometer reading
-- `notes`: Additional notes
-- `createdAt`, `updatedAt`: Timestamps
+---
 
-### VehicleEvent Entity
-- `id`: Primary key (auto-generated)
-- `vehicleId`: Foreign key to Vehicle
-- `eventType`: Type of event (service, insurance, fuel, etc.)
-- `title`: Event title
-- `description`: Event description
-- `date`: Event date (epoch millis)
-- `odometer`: Odometer reading at event
-- `cost`: Event cost
-- `nextDueDate`: Next due date for recurring events
-- `createdAt`: Timestamp
-
-### EventMeta Entity
-- `id`: Primary key (auto-generated)
-- `eventId`: Foreign key to VehicleEvent
-- `key`: Metadata key
-- `value`: Metadata value
-
-## Getting Started
+## Getting started
 
 ### Prerequisites
-- Android Studio (latest version)
-- Android SDK 34
-- Java 17 or higher
 
-### Installation
-1. Clone the repository
-2. Open the project in Android Studio
-3. Sync Gradle dependencies
-4. Build and run the app on an emulator or physical device
+- [Android Studio](https://developer.android.com/studio) (current stable channel)
+- **JDK 17**
+- **Android SDK 34** (as set in the project)
 
-### Building the APK
+### Run the app
+
+1. Clone this repository.
+2. Open the project root in Android Studio.
+3. Let Gradle sync finish.
+4. Run on an emulator or a device (**Run** ▶).
+
+### Release APK
+
+**macOS / Linux**
+
 ```bash
 ./gradlew assembleRelease
 ```
 
-The APK will be available at `app/build/outputs/apk/release/`
+**Windows**
 
-## Dependencies
+```powershell
+.\gradlew.bat assembleRelease
+```
 
-- **AndroidX Core**: `androidx.core:core-ktx:1.12.0`
-- **Material Design**: `com.google.android.material:material:1.11.0`
-- **Room Database**: `androidx.room:room-runtime:2.6.1`
-- **Coroutines**: `org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3`
-- **Lifecycle Components**: `androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0`
+Output: `app/build/outputs/apk/release/`
 
-## Usage
+---
 
-1. **Add a Vehicle**: Tap the + button on the main screen to add your first vehicle
-2. **View Vehicle Details**: Tap any vehicle to see its details and events
-3. **Add Events**: From vehicle details, tap + to add maintenance events
-4. **Track Maintenance**: View all past events and upcoming due dates
-5. **Manage Vehicles**: Edit or delete vehicles as needed
+## Roadmap
 
-## Future Enhancements
+Ideas for future releases (not commitments):
 
-- Export data to CSV/PDF
-- Cloud backup and sync
-- Reminder notifications for upcoming due dates
-- Fuel efficiency calculations
-- Service interval recommendations
-- Multiple user profiles
-- Dark mode support
+- Export to CSV / PDF  
+- Backup / sync (optional cloud)  
+- Reminders for upcoming due dates  
+- Fuel-efficiency and service-interval helpers  
+- Multi-profile support  
+- Themed / dark mode polish  
+
+---
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+Contributions are welcome.
+
+1. Fork the repo and create a branch from `main`.
+2. Make focused changes with clear commit messages.
+3. Open a pull request describing **what** changed and **why**.
+
+Please keep PRs reasonably scoped; it helps review and merge quickly.
+
+---
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+Distributed under the [MIT License](LICENSE).
 
-## Acknowledgments
 
-- Built with Android Jetpack components
-- Material Design 3 for modern UI
-- Room for local data persistence
-- Kotlin Coroutines for asynchronous programming
