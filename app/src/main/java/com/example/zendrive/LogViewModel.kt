@@ -2,6 +2,7 @@ package com.example.zendrive
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -9,8 +10,38 @@ import kotlinx.coroutines.launch
 class LogViewModel(
     private val vehicleDao: VehicleDao,
     private val eventDao: VehicleEventDao,
-    private val metaDao: EventMetaDao
+    private val metaDao: EventMetaDao,
+    private val userProfileDao: UserProfileDao
 ) : ViewModel() {
+
+    val userProfileFlow: Flow<UserProfile?> = userProfileDao.observeProfile()
+
+    fun saveUserProfile(
+        displayName: String,
+        email: String,
+        mobile: String?,
+        currencyCode: String,
+        existing: UserProfile?
+    ) {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            val trimmedCurrency = currencyCode.trim().ifBlank { "INR" }
+            val profile = UserProfile(
+                id = 1,
+                displayName = displayName.trim(),
+                email = email.trim(),
+                mobileNumber = mobile?.trim()?.takeIf { it.isNotBlank() },
+                preferredCurrencyCode = trimmedCurrency,
+                backupEnabled = existing?.backupEnabled ?: false,
+                lastBackupAt = existing?.lastBackupAt,
+                lastRestoreAt = existing?.lastRestoreAt,
+                driveAccountEmail = existing?.driveAccountEmail,
+                createdAt = existing?.createdAt ?: now,
+                updatedAt = now
+            )
+            userProfileDao.upsert(profile)
+        }
+    }
 
     // ─── Vehicle state ────────────────────────────────────────────────────────
 

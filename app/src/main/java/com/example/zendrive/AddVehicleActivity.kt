@@ -26,7 +26,12 @@ class AddVehicleActivity : AppCompatActivity() {
         setContentView(R.layout.activity_add_vehicle)
 
         val db = AppDatabase.getInstance(this)
-        val factory = ViewModelFactory(db.vehicleDao(), db.vehicleEventDao(), db.eventMetaDao())
+        val factory = ViewModelFactory(
+            db.vehicleDao(),
+            db.vehicleEventDao(),
+            db.eventMetaDao(),
+            db.userProfileDao()
+        )
         viewModel = ViewModelProvider(this, factory)[LogViewModel::class.java]
 
         // Toolbar

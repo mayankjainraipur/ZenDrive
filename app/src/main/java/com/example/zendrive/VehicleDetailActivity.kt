@@ -35,7 +35,12 @@ class VehicleDetailActivity : AppCompatActivity() {
         }
 
         val db = AppDatabase.getInstance(this)
-        val factory = ViewModelFactory(db.vehicleDao(), db.vehicleEventDao(), db.eventMetaDao())
+        val factory = ViewModelFactory(
+            db.vehicleDao(),
+            db.vehicleEventDao(),
+            db.eventMetaDao(),
+            db.userProfileDao()
+        )
         viewModel = ViewModelProvider(this, factory)[LogViewModel::class.java]
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
