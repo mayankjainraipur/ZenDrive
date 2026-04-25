@@ -1,38 +1,24 @@
 package com.example.zendrive
 
-import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.ImageButton
-import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var viewModel: LogViewModel
-    private lateinit var adapter: VehicleAdapter
-
+    private lateinit var bottomNav: BottomNavigationView
+    private lateinit var onboardingOverlay: ScrollView
+    private lateinit var fragmentContainer: FrameLayout
     private lateinit var onboardingFormRoot: View
-
-    private var allVehicles: List<Vehicle> = emptyList()
-    private var searchQuery: String = ""
-    private var searchExpanded: Boolean = false
 
     /** Latest profile from DB; avoids stale null from StateFlow before Room emits. */
     private var currentProfile: UserProfile? = null
@@ -50,89 +36,95 @@ class MainActivity : AppCompatActivity() {
         )
         viewModel = ViewModelProvider(this, factory)[LogViewModel::class.java]
 
-        val onboardingOverlay = findViewById<ScrollView>(R.id.onboardingOverlay)
+        onboardingOverlay = findViewById(R.id.onboardingOverlay)
+        fragmentContainer = findViewById(R.id.fragmentContainer)
+        bottomNav = findViewById(R.id.bottomNav)
+
         val onboardingSlot = findViewById<FrameLayout>(R.id.onboardingFormSlot)
         onboardingFormRoot = layoutInflater.inflate(R.layout.user_profile_form_fields, onboardingSlot, true)
-
-        val recycler = findViewById<RecyclerView>(R.id.recyclerVehicles)
-        val emptyState = findViewById<LinearLayout>(R.id.emptyState)
-        val tvNoSearchMatches = findViewById<TextView>(R.id.tvNoSearchMatches)
-        val fab = findViewById<ExtendedFloatingActionButton>(R.id.fabAddVehicle)
-        val btnSearch = findViewById<ImageButton>(R.id.btnSearch)
-        val btnProfile = findViewById<ImageButton>(R.id.btnProfile)
-        val searchLayout = findViewById<TextInputLayout>(R.id.searchInputLayout)
-        val editSearch = findViewById<TextInputEditText>(R.id.editSearch)
-
-        adapter = VehicleAdapter { vehicle ->
-            val intent = Intent(this, VehicleDetailActivity::class.java)
-            intent.putExtra("vehicleId", vehicle.id)
-            startActivity(intent)
-        }
-
-        recycler.layoutManager = LinearLayoutManager(this)
-        recycler.adapter = adapter
 
         findViewById<MaterialButton>(R.id.btnContinueProfile).setOnClickListener {
             submitOnboardingProfile()
         }
 
-        btnProfile.setOnClickListener {
-            startActivity(Intent(this, ProfileActivity::class.java))
-        }
-
-        btnSearch.setOnClickListener {
-            searchExpanded = !searchExpanded
-            searchLayout.visibility = if (searchExpanded) View.VISIBLE else View.GONE
-            if (searchExpanded) {
-                editSearch.requestFocus()
-                val imm =
-                    getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-                imm.showSoftInput(editSearch, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
-            } else {
-                editSearch.setText("")
-                searchQuery = ""
-                applyFilterAndUpdateUi(emptyState, tvNoSearchMatches, recycler)
-                val imm =
-                    getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-                imm.hideSoftInputFromWindow(editSearch.windowToken, 0)
+        // Set up bottom navigation
+        bottomNav.setOnItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_vehicles -> {
+                    showFragment(VehiclesFragment::class.java.simpleName)
+                    true
+                }
+                R.id.nav_expenses -> {
+                    showFragment(ExpensesFragment::class.java.simpleName)
+                    true
+                }
+                R.id.nav_sync -> {
+                    showFragment(SyncFragment::class.java.simpleName)
+                    true
+                }
+                else -> false
             }
         }
 
-        editSearch.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                searchQuery = s?.toString().orEmpty()
-                applyFilterAndUpdateUi(emptyState, tvNoSearchMatches, recycler)
-            }
-        })
-
+        // Observe profile to show/hide onboarding
         lifecycleScope.launch {
-            viewModel.userProfileFlow.distinctUntilChanged().collectLatest { profile ->
+            viewModel.userProfileFlow.collectLatest { profile ->
                 currentProfile = profile
                 val showOnboarding = profile == null
                 onboardingOverlay.visibility = if (showOnboarding) View.VISIBLE else View.GONE
-                btnProfile.visibility = if (!showOnboarding) View.VISIBLE else View.GONE
-                fab.visibility = if (!showOnboarding) View.VISIBLE else View.GONE
+                bottomNav.visibility = if (!showOnboarding) View.VISIBLE else View.GONE
+
+                if (!showOnboarding && supportFragmentManager.fragments.isEmpty()) {
+                    // Load default fragment
+                    showFragment(VehiclesFragment::class.java.simpleName)
+                    bottomNav.selectedItemId = R.id.nav_vehicles
+                }
             }
         }
 
-        lifecycleScope.launch {
-            viewModel.vehicles.collectLatest { vehicles ->
-                allVehicles = vehicles
-                applyFilterAndUpdateUi(emptyState, tvNoSearchMatches, recycler)
+        // Load default fragment if not showing onboarding
+        if (savedInstanceState == null) {
+            lifecycleScope.launch {
+                viewModel.userProfileFlow.collectLatest { profile ->
+                    if (profile != null && supportFragmentManager.fragments.isEmpty()) {
+                        showFragment(VehiclesFragment::class.java.simpleName)
+                        bottomNav.selectedItemId = R.id.nav_vehicles
+                    }
+                }
             }
         }
+    }
 
-        fab.setOnClickListener {
-            startActivity(Intent(this, AddVehicleActivity::class.java))
+    private fun showFragment(tag: String) {
+        val fragmentManager = supportFragmentManager
+        val currentFragment = fragmentManager.fragments.find { it.isVisible }
+
+        // Hide current fragment
+        currentFragment?.let {
+            fragmentManager.beginTransaction().hide(it).commitNow()
+        }
+
+        // Show or create new fragment
+        var fragment = fragmentManager.findFragmentByTag(tag)
+        if (fragment == null) {
+            fragment = when (tag) {
+                VehiclesFragment::class.java.simpleName -> VehiclesFragment()
+                ExpensesFragment::class.java.simpleName -> ExpensesFragment()
+                SyncFragment::class.java.simpleName -> SyncFragment()
+                else -> VehiclesFragment()
+            }
+            fragmentManager.beginTransaction()
+                .add(R.id.fragmentContainer, fragment, tag)
+                .commitNow()
+        } else {
+            fragmentManager.beginTransaction().show(fragment).commitNow()
         }
     }
 
     private fun submitOnboardingProfile() {
-        val nameLayout = onboardingFormRoot.findViewById<TextInputLayout>(R.id.layoutDisplayName)
+        val nameLayout = onboardingFormRoot.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.layoutDisplayName)
         val name =
-            onboardingFormRoot.findViewById<TextInputEditText>(R.id.etDisplayName).text?.toString().orEmpty()
+            onboardingFormRoot.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etDisplayName).text?.toString().orEmpty()
         if (name.isBlank()) {
             nameLayout.error = getString(R.string.profile_username_required)
             return
@@ -140,51 +132,13 @@ class MainActivity : AppCompatActivity() {
         nameLayout.error = null
         viewModel.saveUserProfile(
             displayName = name,
-            email = onboardingFormRoot.findViewById<TextInputEditText>(R.id.etEmail).text?.toString()
+            email = onboardingFormRoot.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etEmail).text?.toString()
                 .orEmpty(),
-            mobile = onboardingFormRoot.findViewById<TextInputEditText>(R.id.etMobile).text?.toString(),
-            currencyCode = onboardingFormRoot.findViewById<TextInputEditText>(R.id.etCurrency).text?.toString()
+            mobile = onboardingFormRoot.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etMobile).text?.toString(),
+            currencyCode = onboardingFormRoot.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etCurrency).text?.toString()
                 .orEmpty(),
             existing = null
         )
-    }
-
-    private fun filteredVehicles(): List<Vehicle> {
-        val q = searchQuery.trim().lowercase()
-        if (q.isEmpty()) return allVehicles
-        return allVehicles.filter { v ->
-            v.name.lowercase().contains(q) ||
-                v.vehicleNumber.lowercase().contains(q) ||
-                v.brand.lowercase().contains(q) ||
-                v.model.lowercase().contains(q)
-        }
-    }
-
-    private fun applyFilterAndUpdateUi(
-        emptyState: LinearLayout,
-        tvNoSearchMatches: TextView,
-        recycler: RecyclerView
-    ) {
-        val filtered = filteredVehicles()
-        adapter.submitList(filtered)
-
-        when {
-            allVehicles.isEmpty() -> {
-                emptyState.visibility = View.VISIBLE
-                tvNoSearchMatches.visibility = View.GONE
-                recycler.visibility = View.GONE
-            }
-            filtered.isEmpty() && searchQuery.isNotBlank() -> {
-                emptyState.visibility = View.GONE
-                tvNoSearchMatches.visibility = View.VISIBLE
-                recycler.visibility = View.GONE
-            }
-            else -> {
-                emptyState.visibility = View.GONE
-                tvNoSearchMatches.visibility = View.GONE
-                recycler.visibility = View.VISIBLE
-            }
-        }
     }
 
     override fun onResume() {

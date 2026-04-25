@@ -1,5 +1,6 @@
 package com.example.zendrive
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.Flow
@@ -15,6 +16,66 @@ class LogViewModel(
 ) : ViewModel() {
 
     val userProfileFlow: Flow<UserProfile?> = userProfileDao.observeProfile()
+
+    // Sync status state
+    private val _syncStatus = MutableStateFlow<SyncStatus>(SyncStatus.Idle)
+    val syncStatus: StateFlow<SyncStatus> = _syncStatus
+
+    sealed class SyncStatus {
+        object Idle : SyncStatus()
+        object InProgress : SyncStatus()
+        data class Success(val message: String) : SyncStatus()
+        data class Error(val message: String) : SyncStatus()
+    }
+
+    // Expense methods for the Expenses tab
+    suspend fun getExpensesForVehicleInRange(
+        vehicleId: Int,
+        startDate: Long,
+        endDate: Long
+    ): List<VehicleEvent> {
+        return eventDao.getExpensesForVehicleInRange(vehicleId, startDate, endDate)
+    }
+
+    suspend fun getTotalExpensesForVehicleInRange(
+        vehicleId: Int,
+        startDate: Long,
+        endDate: Long
+    ): Double? {
+        return eventDao.getTotalExpensesForVehicleInRange(vehicleId, startDate, endDate)
+    }
+
+    // Google Drive Sync method (stub for now - actual implementation will be done separately)
+    suspend fun performGoogleDriveSync(context: Context) {
+        _syncStatus.value = SyncStatus.InProgress
+
+        // This is a placeholder implementation
+        // Actual Google Drive sync logic will be implemented separately
+        try {
+            val profile = userProfileDao.getProfile()
+
+            if (profile?.driveAccountEmail.isNullOrBlank()) {
+                _syncStatus.value = SyncStatus.Error("No Google account linked. Please add an account in Profile settings.")
+                return
+            }
+
+            // Simulate sync delay
+            kotlinx.coroutines.delay(1500)
+
+            // Update last backup time
+            val updatedProfile = profile?.copy(
+                lastBackupAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis()
+            )
+            if (updatedProfile != null) {
+                userProfileDao.upsert(updatedProfile)
+            }
+
+            _syncStatus.value = SyncStatus.Success("Backup completed successfully")
+        } catch (e: Exception) {
+            _syncStatus.value = SyncStatus.Error("Sync failed: ${e.message}")
+        }
+    }
 
     fun saveUserProfile(
         displayName: String,

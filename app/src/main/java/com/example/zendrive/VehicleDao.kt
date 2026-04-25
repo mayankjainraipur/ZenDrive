@@ -67,6 +67,39 @@ interface VehicleEventDao {
 
     @Query("DELETE FROM vehicle_event WHERE vehicleId = :vehicleId")
     suspend fun deleteAllEventsForVehicle(vehicleId: Int)
+
+    @Query(
+        """
+        SELECT * FROM vehicle_event 
+        WHERE vehicleId = :vehicleId 
+        AND cost IS NOT NULL 
+        AND cost > 0 
+        AND date >= :startDate 
+        AND date <= :endDate 
+        ORDER BY date DESC
+        """
+    )
+    suspend fun getExpensesForVehicleInRange(
+        vehicleId: Int,
+        startDate: Long,
+        endDate: Long
+    ): List<VehicleEvent>
+
+    @Query(
+        """
+        SELECT SUM(cost) FROM vehicle_event 
+        WHERE vehicleId = :vehicleId 
+        AND cost IS NOT NULL 
+        AND cost > 0 
+        AND date >= :startDate 
+        AND date <= :endDate
+        """
+    )
+    suspend fun getTotalExpensesForVehicleInRange(
+        vehicleId: Int,
+        startDate: Long,
+        endDate: Long
+    ): Double?
 }
 
 // ─── EventMetaDao ────────────────────────────────────────────────────────────

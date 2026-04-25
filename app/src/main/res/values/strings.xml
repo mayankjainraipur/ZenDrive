@@ -91,4 +91,33 @@
     <string name="edit_profile">Edit</string>
     <string name="profile_empty_placeholder">Not set</string>
     <string name="profile_username_required">Username is required</string>
+
+    <!-- Bottom Navigation -->
+    <string name="tab_vehicles">Vehicles</string>
+    <string name="tab_expenses">Expenses</string>
+    <string name="tab_sync">Sync</string>
+
+    <!-- Expenses -->
+    <string name="select_vehicle">Select Vehicle</string>
+    <string name="time_range">Time Range</string>
+    <string name="no_vehicles_for_expenses">No vehicles found. Please add a vehicle to view expenses.</string>
+    <string name="no_expenses_recorded">No expenses recorded. Total: 0</string>
+    <string name="expense_total">Total: %1$s</string>
+    <string name="time_last_1_month">Last 1 Month</string>
+    <string name="time_last_3_months">Last 3 Months</string>
+    <string name="time_last_6_months">Last 6 Months</string>
+    <string name="time_last_1_year">Last 1 Year</string>
+    <string name="time_all_time">All Time</string>
+
+    <!-- Sync -->
+    <string name="sync_button">Sync</string>
+    <string name="sync_in_progress">Sync in progress...</string>
+    <string name="sync_completed">Sync completed successfully</string>
+    <string name="sync_permission_required">Permission required</string>
+    <string name="sync_add_account">Please add a Google account to sync</string>
+    <string name="sync_account_email">Google Account: %1$s</string>
+    <string name="sync_no_account">No Google account linked</string>
+    <string name="sync_last_backup">Last backup: %1$s</string>
+    <string name="sync_last_restore">Last restore: %1$s</string>
+    <string name="sync_never">Never</string>
 </resources>
