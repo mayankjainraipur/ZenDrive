@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import android.widget.TextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.flow.collectLatest
@@ -20,10 +21,10 @@ class ProfileActivity : AppCompatActivity() {
 
     private lateinit var readSection: View
     private lateinit var editSection: View
-    private lateinit var tvDisplayName: TextInputEditText
-    private lateinit var tvEmail: TextInputEditText
-    private lateinit var tvMobile: TextInputEditText
-    private lateinit var tvCurrency: TextInputEditText
+    private lateinit var tvDisplayName: TextView
+    private lateinit var tvEmail: TextView
+    private lateinit var tvMobile: TextView
+    private lateinit var tvCurrency: TextView
 
     private lateinit var etDisplayName: TextInputEditText
     private lateinit var etEmail: TextInputEditText
