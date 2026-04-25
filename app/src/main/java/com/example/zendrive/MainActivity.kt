@@ -15,7 +15,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
@@ -78,8 +77,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnProfile.setOnClickListener {
-            val p = currentProfile ?: return@setOnClickListener
-            showProfileBottomSheet(p)
+            startActivity(Intent(this, ProfileActivity::class.java))
         }
 
         btnSearch.setOnClickListener {
@@ -149,86 +147,6 @@ class MainActivity : AppCompatActivity() {
                 .orEmpty(),
             existing = null
         )
-    }
-
-    private fun showProfileBottomSheet(profile: UserProfile) {
-        val dialog = BottomSheetDialog(this)
-        val content = layoutInflater.inflate(R.layout.bottom_sheet_user_profile, null, false)
-        dialog.setContentView(content)
-
-        val readSection = content.findViewById<LinearLayout>(R.id.profileReadSection)
-        val editSlot = content.findViewById<FrameLayout>(R.id.profileEditFormSlot)
-        val viewActions = content.findViewById<LinearLayout>(R.id.profileViewActions)
-        val editActions = content.findViewById<LinearLayout>(R.id.profileEditActions)
-
-        val tvReadDisplayName = content.findViewById<TextView>(R.id.tvReadDisplayName)
-        val tvReadEmail = content.findViewById<TextView>(R.id.tvReadEmail)
-        val tvReadMobile = content.findViewById<TextView>(R.id.tvReadMobile)
-        val tvReadCurrency = content.findViewById<TextView>(R.id.tvReadCurrency)
-
-        var editFormRoot: View? = null
-
-        fun bindRead(p: UserProfile) {
-            tvReadDisplayName.text = p.displayName
-            tvReadEmail.text = p.email.takeIf { it.isNotBlank() }
-                ?: getString(R.string.profile_empty_placeholder)
-            tvReadMobile.text = p.mobileNumber?.takeIf { it.isNotBlank() }
-                ?: getString(R.string.profile_empty_placeholder)
-            tvReadCurrency.text = p.preferredCurrencyCode.takeIf { it.isNotBlank() }
-                ?: getString(R.string.profile_empty_placeholder)
-        }
-
-        bindRead(profile)
-
-        fun enterViewMode() {
-            editFormRoot = null
-            readSection.visibility = View.VISIBLE
-            viewActions.visibility = View.VISIBLE
-            editSlot.visibility = View.GONE
-            editSlot.removeAllViews()
-            editActions.visibility = View.GONE
-            bindRead(profile)
-        }
-
-        content.findViewById<MaterialButton>(R.id.btnEditProfile).setOnClickListener {
-            editSlot.removeAllViews()
-            editFormRoot = layoutInflater.inflate(R.layout.user_profile_form_fields, editSlot, true)
-            val form = editFormRoot!!
-            form.findViewById<TextInputEditText>(R.id.etDisplayName).setText(profile.displayName)
-            form.findViewById<TextInputEditText>(R.id.etEmail).setText(profile.email)
-            form.findViewById<TextInputEditText>(R.id.etMobile).setText(profile.mobileNumber.orEmpty())
-            form.findViewById<TextInputEditText>(R.id.etCurrency).setText(profile.preferredCurrencyCode)
-            readSection.visibility = View.GONE
-            viewActions.visibility = View.GONE
-            editSlot.visibility = View.VISIBLE
-            editActions.visibility = View.VISIBLE
-        }
-
-        content.findViewById<MaterialButton>(R.id.btnCancelEdit).setOnClickListener {
-            enterViewMode()
-        }
-
-        content.findViewById<MaterialButton>(R.id.btnSaveProfile).setOnClickListener {
-            val form = editFormRoot ?: return@setOnClickListener
-            val nameLayout = form.findViewById<TextInputLayout>(R.id.layoutDisplayName)
-            val name = form.findViewById<TextInputEditText>(R.id.etDisplayName).text?.toString().orEmpty()
-            if (name.isBlank()) {
-                nameLayout.error = getString(R.string.profile_username_required)
-                return@setOnClickListener
-            }
-            nameLayout.error = null
-            viewModel.saveUserProfile(
-                displayName = name,
-                email = form.findViewById<TextInputEditText>(R.id.etEmail).text?.toString().orEmpty(),
-                mobile = form.findViewById<TextInputEditText>(R.id.etMobile).text?.toString(),
-                currencyCode = form.findViewById<TextInputEditText>(R.id.etCurrency).text?.toString()
-                    .orEmpty(),
-                existing = profile
-            )
-            dialog.dismiss()
-        }
-
-        dialog.show()
     }
 
     private fun filteredVehicles(): List<Vehicle> {
