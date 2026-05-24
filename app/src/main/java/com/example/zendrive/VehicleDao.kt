@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 
 // ─── VehicleDao ──────────────────────────────────────────────────────────────
 
@@ -28,12 +29,28 @@ interface VehicleDao {
     @Query("SELECT * FROM vehicle ORDER BY createdAt DESC")
     suspend fun getAllVehicles(): List<Vehicle>
 
+    @Query("SELECT * FROM vehicle ORDER BY createdAt DESC")
+    fun observeAllVehicles(): Flow<List<Vehicle>>
+
     @Query("SELECT * FROM vehicle WHERE id = :vehicleId")
     suspend fun getVehicleById(vehicleId: Int): Vehicle?
 
     @Query("SELECT * FROM vehicle WHERE type = :type ORDER BY createdAt DESC")
     suspend fun getVehiclesByType(type: String): List<Vehicle>
+
+    @Query("SELECT * FROM vehicle WHERE isArchived = 0 ORDER BY createdAt DESC")
+    fun observeActiveVehicles(): Flow<List<Vehicle>>
+
+    @Query("SELECT * FROM vehicle WHERE isArchived = 1 ORDER BY archivedAt DESC")
+    fun observeArchivedVehicles(): Flow<List<Vehicle>>
 }
+
+// ─── CategoryExpense (POJO for grouped query results) ───────────────────────
+
+data class CategoryExpense(
+    val eventType: String,
+    val totalCost: Double
+)
 
 // ─── VehicleEventDao ─────────────────────────────────────────────────────────
 
@@ -55,6 +72,9 @@ interface VehicleEventDao {
 
     @Query("SELECT * FROM vehicle_event WHERE vehicleId = :vehicleId ORDER BY date DESC")
     suspend fun getEventsForVehicle(vehicleId: Int): List<VehicleEvent>
+
+    @Query("SELECT * FROM vehicle_event WHERE vehicleId = :vehicleId ORDER BY date DESC")
+    fun observeEventsForVehicle(vehicleId: Int): Flow<List<VehicleEvent>>
 
     @Query("SELECT * FROM vehicle_event WHERE vehicleId = :vehicleId AND eventType = :eventType ORDER BY date DESC")
     suspend fun getEventsByType(vehicleId: Int, eventType: String): List<VehicleEvent>
@@ -100,6 +120,25 @@ interface VehicleEventDao {
         startDate: Long,
         endDate: Long
     ): Double?
+
+    @Query("SELECT * FROM vehicle_event WHERE vehicleId = :vehicleId AND eventType = 'fuel' ORDER BY date ASC")
+    suspend fun getFuelEventsAsc(vehicleId: Int): List<VehicleEvent>
+
+    @Query(
+        """
+        SELECT eventType, SUM(cost) as totalCost FROM vehicle_event 
+        WHERE vehicleId = :vehicleId 
+        AND cost > 0 
+        AND date >= :startDate 
+        AND date <= :endDate 
+        GROUP BY eventType
+        """
+    )
+    suspend fun getExpensesByCategory(
+        vehicleId: Int,
+        startDate: Long,
+        endDate: Long
+    ): List<CategoryExpense>
 }
 
 // ─── EventMetaDao ────────────────────────────────────────────────────────────

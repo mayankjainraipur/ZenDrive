@@ -13,12 +13,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 class ExpensesFragment : Fragment() {
@@ -39,6 +38,16 @@ class ExpensesFragment : Fragment() {
     private lateinit var tvTotalExpenses: TextView
     private lateinit var emptyNoVehicles: LinearLayout
     private lateinit var emptyNoExpenses: LinearLayout
+
+    private lateinit var cardFuelStats: MaterialCardView
+    private lateinit var tvCostPerKm: TextView
+    private lateinit var tvTotalFuelCost: TextView
+    private lateinit var tvTotalDistance: TextView
+    private lateinit var rowTotalDistance: LinearLayout
+    private lateinit var tvFuelFills: TextView
+    private lateinit var tvNoFuelData: TextView
+    private lateinit var cardCategoryBreakdown: MaterialCardView
+    private lateinit var categoryContainer: LinearLayout
 
     enum class TimeRange(val labelResId: Int) {
         LAST_1_MONTH(R.string.time_last_1_month),
@@ -78,6 +87,16 @@ class ExpensesFragment : Fragment() {
         emptyNoVehicles = view.findViewById(R.id.emptyNoVehicles)
         emptyNoExpenses = view.findViewById(R.id.emptyNoExpenses)
 
+        cardFuelStats = view.findViewById(R.id.cardFuelStats)
+        tvCostPerKm = view.findViewById(R.id.tvCostPerKm)
+        tvTotalFuelCost = view.findViewById(R.id.tvTotalFuelCost)
+        tvTotalDistance = view.findViewById(R.id.tvTotalDistance)
+        rowTotalDistance = view.findViewById(R.id.rowTotalDistance)
+        tvFuelFills = view.findViewById(R.id.tvFuelFills)
+        tvNoFuelData = view.findViewById(R.id.tvNoFuelData)
+        cardCategoryBreakdown = view.findViewById(R.id.cardCategoryBreakdown)
+        categoryContainer = view.findViewById(R.id.categoryContainer)
+
         adapter = ExpenseAdapter(currencyCode)
         recyclerExpenses.layoutManager = LinearLayoutManager(activity)
         recyclerExpenses.adapter = adapter
@@ -86,9 +105,11 @@ class ExpensesFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.userProfileFlow.collectLatest { profile ->
-                currencyCode = profile?.preferredCurrencyCode?.takeIf { it.isNotBlank() } ?: "INR"
-                adapter = ExpenseAdapter(currencyCode)
-                recyclerExpenses.adapter = adapter
+                val newCode = profile?.preferredCurrencyCode?.takeIf { it.isNotBlank() } ?: "INR"
+                if (currencyCode != newCode) {
+                    currencyCode = newCode
+                    adapter.updateCurrency(newCode)
+                }
                 loadExpenses()
             }
         }
@@ -101,7 +122,6 @@ class ExpensesFragment : Fragment() {
             }
         }
 
-        viewModel.fetchVehicles()
     }
 
     private fun setupTimeRangeSelector() {
@@ -148,6 +168,8 @@ class ExpensesFragment : Fragment() {
                 recyclerExpenses.visibility = View.GONE
                 vehicleSelectorLayout.visibility = View.GONE
                 timeRangeLayout.visibility = View.GONE
+                cardFuelStats.visibility = View.GONE
+                cardCategoryBreakdown.visibility = View.GONE
                 tvTotalExpenses.text = getString(R.string.no_expenses_recorded)
             }
             else -> {
@@ -167,7 +189,10 @@ class ExpensesFragment : Fragment() {
             val expenses = viewModel.getExpensesForVehicleInRange(vehicle.id, startDate, endDate)
             val total = viewModel.getTotalExpensesForVehicleInRange(vehicle.id, startDate, endDate) ?: 0.0
 
-            tvTotalExpenses.text = getString(R.string.expense_total, "$currencyCode ${String.format("%,.2f", total)}")
+            tvTotalExpenses.text = getString(
+                R.string.expense_total,
+                FormatUtil.formatCurrency(total, currencyCode)
+            )
 
             if (expenses.isEmpty()) {
                 emptyNoExpenses.visibility = View.VISIBLE
@@ -177,8 +202,118 @@ class ExpensesFragment : Fragment() {
                 recyclerExpenses.visibility = View.VISIBLE
                 adapter.submitList(expenses)
             }
+
+            loadFuelStats(vehicle.id)
+            loadCategoryBreakdown(vehicle.id, startDate, endDate)
         }
     }
+
+    private suspend fun loadFuelStats(vehicleId: Int) {
+        val stats = viewModel.calculateFuelStats(vehicleId)
+
+        if (stats.fillCount == 0) {
+            cardFuelStats.visibility = View.GONE
+            return
+        }
+
+        cardFuelStats.visibility = View.VISIBLE
+
+        if (stats.avgCostPerKm != null) {
+            tvCostPerKm.text = getString(
+                R.string.cost_per_km_value,
+                FormatUtil.formatCurrency(stats.avgCostPerKm, currencyCode)
+            )
+            tvNoFuelData.visibility = View.GONE
+        } else {
+            tvCostPerKm.text = "—"
+            tvNoFuelData.visibility = View.VISIBLE
+        }
+
+        tvTotalFuelCost.text = FormatUtil.formatCurrency(stats.totalFuelCost, currencyCode)
+
+        if (stats.totalDistance != null) {
+            rowTotalDistance.visibility = View.VISIBLE
+            tvTotalDistance.text = FormatUtil.formatDistance(stats.totalDistance)
+        } else {
+            rowTotalDistance.visibility = View.GONE
+        }
+
+        tvFuelFills.text = getString(R.string.fuel_fills_count, stats.fillCount)
+    }
+
+    private suspend fun loadCategoryBreakdown(vehicleId: Int, startDate: Long, endDate: Long) {
+        val categories = viewModel.getCategoryBreakdown(vehicleId, startDate, endDate)
+
+        if (categories.isEmpty()) {
+            cardCategoryBreakdown.visibility = View.GONE
+            return
+        }
+
+        cardCategoryBreakdown.visibility = View.VISIBLE
+        categoryContainer.removeAllViews()
+
+        val totalCost = categories.sumOf { it.totalCost }
+
+        for (category in categories) {
+            val row = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = 8.dpToPx() }
+            }
+
+            val icon = TextView(requireContext()).apply {
+                text = getCategoryIcon(category.eventType)
+                textSize = 16f
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { marginEnd = 8.dpToPx() }
+            }
+
+            val label = TextView(requireContext()).apply {
+                text = category.eventType.replaceFirstChar { it.uppercase() }
+                textSize = 14f
+                setTextColor(resources.getColor(R.color.text_secondary, null))
+                layoutParams = LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+                )
+            }
+
+            val amount = TextView(requireContext()).apply {
+                text = FormatUtil.formatCurrency(category.totalCost, currencyCode)
+                textSize = 14f
+                setTextColor(resources.getColor(R.color.text_primary, null))
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+
+            val pct = if (totalCost > 0) (category.totalCost / totalCost * 100) else 0.0
+            val percent = TextView(requireContext()).apply {
+                text = String.format(Locale.getDefault(), " (%.0f%%)", pct)
+                textSize = 12f
+                setTextColor(resources.getColor(R.color.text_secondary, null))
+            }
+
+            row.addView(icon)
+            row.addView(label)
+            row.addView(amount)
+            row.addView(percent)
+            categoryContainer.addView(row)
+        }
+    }
+
+    private fun getCategoryIcon(eventType: String): String = when (eventType.lowercase()) {
+        "fuel" -> "\u26FD"
+        "service" -> "\u2699\uFE0F"
+        "repair" -> "\uD83D\uDD27"
+        "insurance" -> "\uD83D\uDCDC"
+        "tax" -> "\uD83D\uDCB8"
+        else -> "\uD83D\uDED2"
+    }
+
+    private fun Int.dpToPx(): Int =
+        (this * resources.displayMetrics.density + 0.5f).toInt()
 
     private fun getDateRangeForTimeRange(timeRange: TimeRange): Pair<Long, Long> {
         val calendar = Calendar.getInstance()
@@ -196,10 +331,5 @@ class ExpensesFragment : Fragment() {
         }
 
         return Pair(calendar.timeInMillis, endDate)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.fetchVehicles()
     }
 }

@@ -19,7 +19,7 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@color/primary"
             app:navigationIcon="@drawable/ic_arrow_back"
-            app:title="@string/add_event"
+            app:title="@string/add_reminder"
             app:titleTextAppearance="@style/ZenDrive.ToolbarTitle" />
 
         <LinearLayout
@@ -28,15 +28,31 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <!-- Event Type Dropdown -->
+            <!-- Vehicle Dropdown -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutVehicle"
+                style="@style/ZenDrive.TextInputLayout.Dropdown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                android:hint="@string/select_vehicle">
+                <AutoCompleteTextView
+                    android:id="@+id/actvVehicle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_primary"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Reminder Type Dropdown -->
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/ZenDrive.TextInputLayout.Dropdown"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="14dp"
-                android:hint="@string/event_type">
+                android:hint="@string/reminder_type">
                 <AutoCompleteTextView
-                    android:id="@+id/actvEventType"
+                    android:id="@+id/actvReminderType"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="@color/text_primary"
@@ -49,7 +65,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="14dp"
-                android:hint="@string/event_title">
+                android:hint="@string/reminder_title">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etTitle"
                     android:layout_width="match_parent"
@@ -64,7 +80,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="14dp"
-                android:hint="@string/description">
+                android:hint="@string/reminder_description">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etDescription"
                     android:layout_width="match_parent"
@@ -75,17 +91,18 @@
                     android:gravity="top" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Date -->
+            <!-- Due Date -->
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/ZenDrive.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="14dp"
                 app:endIconMode="custom"
-                app:endIconDrawable="@drawable/ic_calendar"
-                android:hint="@string/date">
+                app:endIconDrawable="@android:drawable/ic_menu_my_calendar"
+                app:endIconTint="@color/accent"
+                android:hint="@string/due_date">
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etDate"
+                    android:id="@+id/etDueDate"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="@color/text_primary"
@@ -93,113 +110,43 @@
                     android:clickable="true" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Cost & Odometer in a row -->
-            <LinearLayout
+            <!-- Repeat Rule Dropdown -->
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/ZenDrive.TextInputLayout.Dropdown"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="14dp"
-                android:orientation="horizontal">
-
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/ZenDrive.TextInputLayout"
-                    android:layout_width="0dp"
+                android:hint="@string/repeat_rule">
+                <AutoCompleteTextView
+                    android:id="@+id/actvRepeatRule"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    app:prefixText="₹"
-                    app:prefixTextColor="@color/text_hint"
-                    android:hint="@string/cost">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etCost"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/text_primary"
-                        android:inputType="numberDecimal" />
-                </com.google.android.material.textfield.TextInputLayout>
+                    android:textColor="@color/text_primary"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/ZenDrive.TextInputLayout"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:suffixText="km"
-                    app:suffixTextColor="@color/text_hint"
-                    android:hint="@string/odometer">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etOdometer"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/text_primary"
-                        android:inputType="numberDecimal" />
-                </com.google.android.material.textfield.TextInputLayout>
-            </LinearLayout>
-
-            <!-- Next Due Date -->
+            <!-- Link to Event Dropdown -->
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/ZenDrive.TextInputLayout"
+                style="@style/ZenDrive.TextInputLayout.Dropdown"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
-                app:endIconMode="custom"
-                app:endIconDrawable="@drawable/ic_calendar"
-                android:hint="@string/next_due_date">
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etNextDueDate"
+                android:hint="@string/link_to_event">
+                <AutoCompleteTextView
+                    android:id="@+id/actvLinkEvent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="@color/text_primary"
-                    android:focusable="false"
-                    android:clickable="true" />
+                    android:inputType="none" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Divider -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider"
-                android:layout_marginBottom="16dp" />
-
-            <!-- Extra metadata header -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/extra_fields"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnAddMeta"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/add_meta_field"
-                    android:textColor="@color/accent"
-                    android:textAllCaps="false" />
-            </LinearLayout>
-
-            <!-- Dynamic meta fields container -->
-            <LinearLayout
-                android:id="@+id/metaContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
 
             <!-- Save Button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSaveEvent"
+                android:id="@+id/btnSaveReminder"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="20dp"
-                android:text="@string/save_event"
+                android:text="@string/save_reminder"
                 android:textColor="@color/primary"
                 android:textAllCaps="false"
                 android:textSize="16sp"

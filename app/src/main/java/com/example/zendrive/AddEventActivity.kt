@@ -1,6 +1,5 @@
 package com.example.zendrive
 
-import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,10 +12,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Locale
 
 class AddEventActivity : AppCompatActivity() {
@@ -101,6 +100,8 @@ class AddEventActivity : AppCompatActivity() {
                 }
                 vehicleId = event.vehicleId
                 eventDateMillis = event.date
+                val vehicle = db.vehicleDao().getVehicleById(vehicleId)
+                if (vehicle != null) toolbar.subtitle = vehicle.name
                 nextDueDateMillis = event.nextDueDate
 
                 actvEventType.setText(
@@ -135,6 +136,12 @@ class AddEventActivity : AppCompatActivity() {
             }
             toolbar.title = getString(R.string.add_event)
             etDate.setText(dateFormat.format(eventDateMillis))
+            lifecycleScope.launch {
+                val vehicle = db.vehicleDao().getVehicleById(vehicleId)
+                if (vehicle != null) {
+                    toolbar.subtitle = vehicle.name
+                }
+            }
         }
     }
 
@@ -225,10 +232,39 @@ class AddEventActivity : AppCompatActivity() {
                     )
                 }
                 syncVehicleOdometer(db, odometer)
+                autoCreateReminder(db, newId, eventType, title, nextDueDateMillis)
                 Toast.makeText(this@AddEventActivity, "Event saved!", Toast.LENGTH_SHORT).show()
             }
             finish()
         }
+    }
+
+    private suspend fun autoCreateReminder(
+        db: AppDatabase,
+        eventId: Int,
+        eventType: String,
+        title: String,
+        nextDueDate: Long?
+    ) {
+        if (nextDueDate == null) return
+        val reminderType = when (eventType.lowercase(Locale.getDefault())) {
+            "service" -> "service"
+            "insurance" -> "insurance"
+            "tax" -> "tax"
+            else -> "custom"
+        }
+        val now = System.currentTimeMillis()
+        val reminder = Reminder(
+            vehicleId = vehicleId,
+            eventId = eventId,
+            title = "$title — due",
+            reminderType = reminderType,
+            dueAt = nextDueDate,
+            createdAt = now,
+            updatedAt = now
+        )
+        db.reminderDao().insert(reminder)
+        ReminderScheduler.scheduleOneTime(this@AddEventActivity)
     }
 
     private suspend fun syncVehicleOdometer(db: AppDatabase, odometer: Double?) {
@@ -240,17 +276,13 @@ class AddEventActivity : AppCompatActivity() {
     }
 
     private fun showDatePicker(onDateSelected: (Long) -> Unit) {
-        val cal = Calendar.getInstance()
-        DatePickerDialog(
-            this,
-            { _, year, month, day ->
-                cal.set(year, month, day, 0, 0, 0)
-                cal.set(Calendar.MILLISECOND, 0)
-                onDateSelected(cal.timeInMillis)
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH)
-        ).show()
+        val picker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText(getString(R.string.date))
+            .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
+            .build()
+        picker.addOnPositiveButtonClickListener { selection ->
+            onDateSelected(selection)
+        }
+        picker.show(supportFragmentManager, "event_date_picker")
     }
 }

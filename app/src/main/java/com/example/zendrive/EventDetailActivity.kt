@@ -18,6 +18,7 @@ class EventDetailActivity : AppCompatActivity() {
 
     private var eventId: Int = -1
     private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+    private var currencyCode: String = "INR"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +52,9 @@ class EventDetailActivity : AppCompatActivity() {
     private fun loadEvent() {
         val db = AppDatabase.getInstance(this)
         lifecycleScope.launch {
+            val profile = db.userProfileDao().getProfile()
+            currencyCode = profile?.preferredCurrencyCode?.takeIf { it.isNotBlank() } ?: "INR"
+
             val event = db.vehicleEventDao().getEventById(eventId) ?: run {
                 finish()
                 return@launch
@@ -78,7 +82,7 @@ class EventDetailActivity : AppCompatActivity() {
             val tvCost = findViewById<TextView>(R.id.tvCost)
             if (event.cost != null && event.cost > 0) {
                 rowCost.visibility = View.VISIBLE
-                tvCost.text = "₹${String.format("%.0f", event.cost)}"
+                tvCost.text = "$currencyCode ${String.format(Locale.getDefault(), "%,.0f", event.cost)}"
             } else {
                 rowCost.visibility = View.GONE
             }
@@ -87,7 +91,7 @@ class EventDetailActivity : AppCompatActivity() {
             val tvOdometer = findViewById<TextView>(R.id.tvOdometer)
             if (event.odometer != null && event.odometer > 0) {
                 rowOdometer.visibility = View.VISIBLE
-                tvOdometer.text = "${String.format("%.0f", event.odometer)} km"
+                tvOdometer.text = "${String.format(Locale.getDefault(), "%,.0f", event.odometer)} km"
             } else {
                 rowOdometer.visibility = View.GONE
             }

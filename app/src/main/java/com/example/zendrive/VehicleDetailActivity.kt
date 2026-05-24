@@ -5,12 +5,14 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import kotlinx.coroutines.flow.collectLatest
@@ -21,6 +23,7 @@ class VehicleDetailActivity : AppCompatActivity() {
     private lateinit var viewModel: LogViewModel
     private var vehicleId: Int = -1
     private lateinit var eventAdapter: EventAdapter
+    private lateinit var documentAdapter: DocumentAdapter
 
     private var boundVehicle: Vehicle? = null
 
@@ -60,9 +63,14 @@ class VehicleDetailActivity : AppCompatActivity() {
 
         val btnEdit = findViewById<ImageButton>(R.id.btnEdit)
         val btnDeleteVehicle = findViewById<ImageButton>(R.id.btnDeleteVehicle)
+        val btnArchive = findViewById<ImageButton>(R.id.btnArchiveVehicle)
         val fabAddEvent = findViewById<ExtendedFloatingActionButton>(R.id.fabAddEvent)
         val recyclerEvents = findViewById<RecyclerView>(R.id.recyclerEvents)
         val tvEmptyEvents = findViewById<TextView>(R.id.tvEmptyEvents)
+
+        val recyclerDocuments = findViewById<RecyclerView>(R.id.recyclerDocuments)
+        val tvEmptyDocuments = findViewById<TextView>(R.id.tvEmptyDocuments)
+        val btnAddDocument = findViewById<MaterialButton>(R.id.btnAddDocument)
 
         eventAdapter = EventAdapter()
         eventAdapter.onEventClick = { event ->
@@ -73,21 +81,35 @@ class VehicleDetailActivity : AppCompatActivity() {
         recyclerEvents.layoutManager = LinearLayoutManager(this)
         recyclerEvents.adapter = eventAdapter
 
+        documentAdapter = DocumentAdapter()
+        documentAdapter.onDocumentLongClick = { doc -> confirmDeleteDocument(db, doc) }
+        recyclerDocuments.layoutManager = LinearLayoutManager(this)
+        recyclerDocuments.adapter = documentAdapter
+
         btnEdit.setOnClickListener {
             val vehicle = boundVehicle ?: return@setOnClickListener
-            val editIntent = Intent(this@VehicleDetailActivity, AddVehicleActivity::class.java).apply {
-                putExtra("vehicleId", vehicle.id)
-                putExtra("name", vehicle.name)
-                putExtra("number", vehicle.vehicleNumber)
-                putExtra("type", vehicle.type)
-                putExtra("fuelType", vehicle.fuelType)
-                putExtra("brand", vehicle.brand)
-                putExtra("model", vehicle.model)
-                putExtra("year", vehicle.year)
-                putExtra("purchaseDate", vehicle.purchaseDate ?: -1L)
-                putExtra("notes", vehicle.notes)
+            startActivity(
+                Intent(this@VehicleDetailActivity, AddVehicleActivity::class.java)
+                    .putExtra("vehicleId", vehicle.id)
+            )
+        }
+
+        btnArchive.setOnClickListener {
+            val vehicle = boundVehicle ?: return@setOnClickListener
+            if (vehicle.isArchived) {
+                viewModel.unarchiveVehicle(vehicle)
+                Toast.makeText(this, R.string.unarchive_vehicle, Toast.LENGTH_SHORT).show()
+            } else {
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.archive_vehicle)
+                    .setMessage(getString(R.string.archive_confirm, vehicle.name))
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.archive_vehicle) { _, _ ->
+                        viewModel.archiveVehicle(vehicle)
+                        finish()
+                    }
+                    .show()
             }
-            startActivity(editIntent)
         }
 
         btnDeleteVehicle.setOnClickListener {
@@ -104,7 +126,7 @@ class VehicleDetailActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            viewModel.vehicles.collectLatest { vehicles ->
+            viewModel.allVehicles.collectLatest { vehicles ->
                 val vehicle = vehicles.find { it.id == vehicleId }
                 boundVehicle = vehicle
                 if (vehicle != null) {
@@ -116,7 +138,7 @@ class VehicleDetailActivity : AppCompatActivity() {
                     tvType.text = vehicle.type.replaceFirstChar { it.uppercase() }
                     tvFuel.text = vehicle.fuelType.replaceFirstChar { it.uppercase() }
                     tvYear.text = vehicle.year.toString()
-                    tvOdometer.text = "${vehicle.odometerReading} km"
+                    tvOdometer.text = "${String.format(java.util.Locale.getDefault(), "%,.0f", vehicle.odometerReading)} km"
 
                     tvIcon.text = when (vehicle.type.lowercase()) {
                         "car" -> "🚗"
@@ -135,6 +157,11 @@ class VehicleDetailActivity : AppCompatActivity() {
                         tvNotesLabel.visibility = View.GONE
                         tvNotes.visibility = View.GONE
                     }
+
+                    btnArchive.contentDescription = getString(
+                        if (vehicle.isArchived) R.string.unarchive_vehicle
+                        else R.string.archive_vehicle
+                    )
                 }
             }
         }
@@ -157,11 +184,52 @@ class VehicleDetailActivity : AppCompatActivity() {
             intent.putExtra("vehicleId", vehicleId)
             startActivity(intent)
         }
+
+        btnAddDocument.setOnClickListener {
+            startActivity(
+                Intent(this, AddDocumentActivity::class.java)
+                    .putExtra("vehicleId", vehicleId)
+            )
+        }
+
+        viewModel.selectVehicleForEvents(vehicleId)
     }
 
     override fun onResume() {
         super.onResume()
-        viewModel.fetchVehicles()
-        viewModel.fetchEventsForVehicle(vehicleId)
+        loadDocuments()
+    }
+
+    private fun loadDocuments() {
+        val db = AppDatabase.getInstance(this)
+        val tvEmptyDocuments = findViewById<TextView>(R.id.tvEmptyDocuments)
+        val recyclerDocuments = findViewById<RecyclerView>(R.id.recyclerDocuments)
+
+        lifecycleScope.launch {
+            val docs = db.vehicleDocumentDao().getDocumentsForVehicle(vehicleId)
+            documentAdapter.submitList(docs)
+            if (docs.isEmpty()) {
+                tvEmptyDocuments.visibility = View.VISIBLE
+                recyclerDocuments.visibility = View.GONE
+            } else {
+                tvEmptyDocuments.visibility = View.GONE
+                recyclerDocuments.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    private fun confirmDeleteDocument(db: AppDatabase, doc: VehicleDocument) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.delete_document)
+            .setMessage(getString(R.string.delete_document_confirm, doc.title))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.action_delete) { _, _ ->
+                lifecycleScope.launch {
+                    db.vehicleDocumentDao().delete(doc)
+                    Toast.makeText(this@VehicleDetailActivity, R.string.document_deleted, Toast.LENGTH_SHORT).show()
+                    loadDocuments()
+                }
+            }
+            .show()
     }
 }

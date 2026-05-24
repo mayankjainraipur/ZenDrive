@@ -1,15 +1,18 @@
 package com.example.zendrive
 
-import android.app.DatePickerDialog
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -60,36 +63,37 @@ class AddVehicleActivity : AppCompatActivity() {
         // Date picker
         etPurchaseDate.setOnClickListener { showDatePicker(etPurchaseDate) }
 
-        // Check if editing
         editVehicleId = intent.getIntExtra("vehicleId", -1)
         if (editVehicleId != -1) {
             toolbar.title = getString(R.string.edit_vehicle)
-            // Pre-fill fields
-            val name = intent.getStringExtra("name") ?: ""
-            val number = intent.getStringExtra("number") ?: ""
-            val type = intent.getStringExtra("type") ?: ""
-            val fuelType = intent.getStringExtra("fuelType") ?: ""
-            val brand = intent.getStringExtra("brand") ?: ""
-            val model = intent.getStringExtra("model") ?: ""
-            val year = intent.getIntExtra("year", 0)
-            val purchaseDate = intent.getLongExtra("purchaseDate", -1L)
-            val notes = intent.getStringExtra("notes") ?: ""
-
-            etName.setText(name)
-            etNumber.setText(number)
-            actvType.setText(type, false)
-            actvFuelType.setText(fuelType, false)
-            etBrand.setText(brand)
-            etModel.setText(model)
-            if (year > 0) etYear.setText(year.toString())
-            if (purchaseDate > 0) {
-                purchaseDateMillis = purchaseDate
-                etPurchaseDate.setText(dateFormat.format(purchaseDate))
+            btnSave.isEnabled = false
+            lifecycleScope.launch {
+                val vehicle = AppDatabase.getInstance(this@AddVehicleActivity)
+                    .vehicleDao().getVehicleById(editVehicleId)
+                if (vehicle == null) {
+                    finish()
+                    return@launch
+                }
+                etName.setText(vehicle.name)
+                etNumber.setText(vehicle.vehicleNumber)
+                actvType.setText(vehicle.type.replaceFirstChar { it.uppercase() }, false)
+                actvFuelType.setText(vehicle.fuelType.replaceFirstChar { it.uppercase() }, false)
+                etBrand.setText(vehicle.brand)
+                etModel.setText(vehicle.model)
+                if (vehicle.year > 0) etYear.setText(vehicle.year.toString())
+                if (vehicle.purchaseDate != null && vehicle.purchaseDate > 0) {
+                    purchaseDateMillis = vehicle.purchaseDate
+                    etPurchaseDate.setText(dateFormat.format(vehicle.purchaseDate))
+                }
+                etNotes.setText(vehicle.notes.orEmpty())
+                btnSave.isEnabled = true
             }
-            etNotes.setText(notes)
         }
 
-        // Save
+        val layoutName = findViewById<TextInputLayout>(R.id.layoutName)
+        val layoutNumber = findViewById<TextInputLayout>(R.id.layoutNumber)
+        val layoutYear = findViewById<TextInputLayout>(R.id.layoutYear)
+
         btnSave.setOnClickListener {
             val name = etName.text.toString().trim()
             val number = etNumber.text.toString().trim()
@@ -100,14 +104,27 @@ class AddVehicleActivity : AppCompatActivity() {
             val yearStr = etYear.text.toString().trim()
             val notes = etNotes.text.toString().trim()
 
-            if (name.isEmpty() || number.isEmpty() || type.isEmpty() || fuelType.isEmpty()
-                || brand.isEmpty() || model.isEmpty() || yearStr.isEmpty()
-            ) {
-                Toast.makeText(this, "Please fill all required fields", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+            var hasError = false
+            layoutName.error = null
+            layoutNumber.error = null
+            layoutYear.error = null
+
+            if (name.isEmpty()) { layoutName.error = getString(R.string.field_required); hasError = true }
+            if (number.isEmpty()) { layoutNumber.error = getString(R.string.field_required); hasError = true }
+
+            val year = yearStr.toIntOrNull()
+            if (yearStr.isEmpty()) {
+                layoutYear.error = getString(R.string.field_required); hasError = true
+            } else if (year == null || year < 1900 || year > Calendar.getInstance().get(Calendar.YEAR) + 1) {
+                layoutYear.error = getString(R.string.invalid_year); hasError = true
             }
 
-            val year = yearStr.toIntOrNull() ?: 0
+            if (type.isEmpty() || fuelType.isEmpty() || brand.isEmpty() || model.isEmpty()) {
+                Toast.makeText(this, getString(R.string.field_required), Toast.LENGTH_SHORT).show()
+                hasError = true
+            }
+
+            if (hasError) return@setOnClickListener
 
             val vehicle = Vehicle(
                 id = if (editVehicleId != -1) editVehicleId else 0,
@@ -117,7 +134,7 @@ class AddVehicleActivity : AppCompatActivity() {
                 fuelType = fuelType.lowercase(),
                 brand = brand,
                 model = model,
-                year = year,
+                year = year!!,
                 purchaseDate = purchaseDateMillis,
                 notes = notes.ifEmpty { null }
             )
@@ -128,24 +145,19 @@ class AddVehicleActivity : AppCompatActivity() {
                 viewModel.addVehicle(vehicle)
             }
 
-            Toast.makeText(this, "Vehicle saved!", Toast.LENGTH_SHORT).show()
             finish()
         }
     }
 
     private fun showDatePicker(target: TextInputEditText) {
-        val cal = Calendar.getInstance()
-        DatePickerDialog(
-            this,
-            { _, year, month, day ->
-                cal.set(year, month, day, 0, 0, 0)
-                cal.set(Calendar.MILLISECOND, 0)
-                purchaseDateMillis = cal.timeInMillis
-                target.setText(dateFormat.format(cal.time))
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH)
-        ).show()
+        val picker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText(getString(R.string.purchase_date))
+            .setSelection(purchaseDateMillis ?: MaterialDatePicker.todayInUtcMilliseconds())
+            .build()
+        picker.addOnPositiveButtonClickListener { selection ->
+            purchaseDateMillis = selection
+            target.setText(dateFormat.format(selection))
+        }
+        picker.show(supportFragmentManager, "purchase_date_picker")
     }
 }

@@ -89,7 +89,7 @@
                                 android:fontFamily="monospace" />
                         </LinearLayout>
 
-                        <!-- Edit (top) / delete (bottom), right column -->
+                        <!-- Edit / archive / delete, right column -->
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -104,8 +104,18 @@
                                 android:contentDescription="@string/edit_vehicle"
                                 android:padding="2dp"
                                 android:scaleType="centerInside"
-                                android:src="@android:drawable/ic_menu_edit"
-                                app:tint="@color/text_secondary" />
+                                android:src="@drawable/ic_edit" />
+
+                            <ImageButton
+                                android:id="@+id/btnArchiveVehicle"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_marginTop="2dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="@string/archive_vehicle"
+                                android:padding="2dp"
+                                android:scaleType="centerInside"
+                                android:src="@drawable/ic_archive" />
 
                             <ImageButton
                                 android:id="@+id/btnDeleteVehicle"
@@ -116,8 +126,7 @@
                                 android:contentDescription="@string/delete_vehicle"
                                 android:padding="2dp"
                                 android:scaleType="centerInside"
-                                android:src="@android:drawable/ic_menu_delete"
-                                app:tint="@color/error" />
+                                android:src="@drawable/ic_delete" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -145,7 +154,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Brand"
+                                android:text="@string/label_brand"
                                 android:textColor="@color/text_hint"
                                 android:textSize="12sp" />
                             <TextView
@@ -159,7 +168,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Type"
+                                android:text="@string/label_type"
                                 android:textColor="@color/text_hint"
                                 android:textSize="12sp" />
                             <TextView
@@ -180,7 +189,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Model"
+                                android:text="@string/label_model"
                                 android:textColor="@color/text_hint"
                                 android:textSize="12sp" />
                             <TextView
@@ -194,7 +203,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Fuel"
+                                android:text="@string/label_fuel"
                                 android:textColor="@color/text_hint"
                                 android:textSize="12sp" />
                             <TextView
@@ -215,7 +224,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Year"
+                                android:text="@string/label_year"
                                 android:textColor="@color/text_hint"
                                 android:textSize="12sp" />
                             <TextView
@@ -229,7 +238,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Odometer"
+                                android:text="@string/label_odometer"
                                 android:textColor="@color/text_hint"
                                 android:textSize="12sp" />
                             <TextView
@@ -247,7 +256,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="Notes"
+                        android:text="@string/label_notes"
                         android:textColor="@color/text_hint"
                         android:textSize="12sp"
                         android:visibility="gone" />
@@ -304,6 +313,58 @@
                 android:nestedScrollingEnabled="false"
                 android:padding="16dp" />
 
+            <!-- Documents section header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/documents_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddDocument"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/add_document"
+                    android:textColor="@color/accent"
+                    android:textAllCaps="false"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Empty documents state -->
+            <TextView
+                android:id="@+id/tvEmptyDocuments"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="40dp"
+                android:text="@string/no_documents"
+                android:textColor="@color/text_hint"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <!-- Documents RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerDocuments"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:padding="16dp" />
+
             <!-- Bottom spacing for FAB -->
             <View
                 android:layout_width="match_parent"
@@ -320,8 +381,6 @@
         android:layout_margin="24dp"
         android:contentDescription="@string/add_event"
         android:text="@string/add_event"
-        app:icon="@android:drawable/ic_menu_today"
-        app:iconTint="@color/fab_icon"
-        app:backgroundTint="@color/fab_bg" />
+        app:icon="@drawable/ic_event" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

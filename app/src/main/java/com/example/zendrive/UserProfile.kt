@@ -14,6 +14,15 @@ data class UserProfile(
     val mobileNumber: String? = null,
     /** ISO 4217 code, e.g. INR, USD */
     val preferredCurrencyCode: String,
+    /** "km" or "mi" */
+    val distanceUnit: String = "km",
+    /** e.g. "dd MMM yyyy", "MM/dd/yyyy", "yyyy-MM-dd" */
+    val dateFormatPattern: String = "dd MMM yyyy",
+    /** "dark", "light", or "system" */
+    val themeMode: String = "dark",
+    /** Days before due date to fire reminder notification */
+    val reminderLeadDays: Int = 3,
+    val appLockEnabled: Boolean = false,
     val backupEnabled: Boolean = false,
     /** Epoch millis; null if backup has never completed */
     val lastBackupAt: Long? = null,

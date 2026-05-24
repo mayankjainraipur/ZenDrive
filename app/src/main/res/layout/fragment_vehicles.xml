@@ -57,8 +57,7 @@
                     android:layout_height="48dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/search_vehicles"
-                    android:src="@android:drawable/ic_menu_search"
-                    app:tint="@color/text_secondary" />
+                    android:src="@drawable/ic_search" />
 
                 <ImageButton
                     android:id="@+id/btnProfile"
@@ -67,8 +66,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/profile_title"
                     android:src="@drawable/ic_person"
-                    android:visibility="gone"
-                    app:tint="@color/text_secondary" />
+                    android:visibility="gone" />
             </LinearLayout>
 
             <!-- Expandable search -->
@@ -136,15 +134,74 @@
         android:visibility="gone"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-    <!-- Vehicle list -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerVehicles"
+    <!-- Scrollable content with active + archived vehicles -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/vehicleScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:padding="16dp"
         android:paddingBottom="80dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Active vehicle list -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerVehicles"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:padding="16dp" />
+
+            <!-- Archived vehicles toggle -->
+            <LinearLayout
+                android:id="@+id/archivedHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvArchivedLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/archived_vehicles"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/btnToggleArchived"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/archived_vehicles"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_expand_more" />
+            </LinearLayout>
+
+            <!-- Archived vehicle list -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerArchivedVehicles"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:padding="16dp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddVehicle"
@@ -155,8 +212,7 @@
         android:layout_marginBottom="80dp"
         android:contentDescription="@string/add_vehicle"
         android:text="@string/add_vehicle"
-        app:backgroundTint="@color/fab_bg"
-        app:icon="@android:drawable/ic_input_add"
-        app:iconTint="@color/fab_icon" />
+        app:backgroundTint="?attr/colorPrimaryContainer"
+        app:icon="@drawable/ic_add" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -9,6 +9,10 @@
         android:icon="@android:drawable/ic_menu_sort_by_size"
         android:title="@string/tab_expenses" />
     <item
+        android:id="@+id/nav_reminders"
+        android:icon="@android:drawable/ic_popup_reminder"
+        android:title="@string/tab_reminders" />
+    <item
         android:id="@+id/nav_sync"
         android:icon="@android:drawable/ic_menu_upload"
         android:title="@string/tab_sync" />

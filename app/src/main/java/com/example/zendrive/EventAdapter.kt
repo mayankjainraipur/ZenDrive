@@ -11,9 +11,18 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class EventAdapter : ListAdapter<VehicleEvent, EventAdapter.VH>(DIFF) {
+class EventAdapter(
+    private var currencyCode: String = "INR"
+) : ListAdapter<VehicleEvent, EventAdapter.VH>(DIFF) {
 
     var onEventClick: ((VehicleEvent) -> Unit)? = null
+
+    fun updateCurrency(code: String) {
+        if (currencyCode != code) {
+            currencyCode = code
+            notifyItemRangeChanged(0, itemCount)
+        }
+    }
 
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<VehicleEvent>() {
@@ -47,14 +56,14 @@ class EventAdapter : ListAdapter<VehicleEvent, EventAdapter.VH>(DIFF) {
 
         if (event.cost != null && event.cost > 0) {
             holder.cost.visibility = View.VISIBLE
-            holder.cost.text = "₹${String.format("%.0f", event.cost)}"
+            holder.cost.text = "$currencyCode ${String.format(Locale.getDefault(), "%,.0f", event.cost)}"
         } else {
             holder.cost.visibility = View.GONE
         }
 
         if (event.odometer != null && event.odometer > 0) {
             holder.odometer.visibility = View.VISIBLE
-            holder.odometer.text = "${String.format("%.0f", event.odometer)} km"
+            holder.odometer.text = "${String.format(Locale.getDefault(), "%,.0f", event.odometer)} km"
         } else {
             holder.odometer.visibility = View.GONE
         }

@@ -27,6 +27,8 @@ data class Vehicle(
     val purchaseDate: Long? = null,
     val odometerReading: Double = 0.0,
     val notes: String? = null,
+    val isArchived: Boolean = false,
+    val archivedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )
@@ -94,7 +96,7 @@ data class EventMeta(
         Reminder::class,
         BackupRestoreLog::class
     ],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -212,6 +214,23 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `distanceUnit` TEXT NOT NULL DEFAULT 'km'")
+                db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `dateFormatPattern` TEXT NOT NULL DEFAULT 'dd MMM yyyy'")
+                db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `themeMode` TEXT NOT NULL DEFAULT 'dark'")
+                db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `reminderLeadDays` INTEGER NOT NULL DEFAULT 3")
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `vehicle` ADD COLUMN `isArchived` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `vehicle` ADD COLUMN `archivedAt` INTEGER")
+                db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `appLockEnabled` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getInstance(context: android.content.Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = androidx.room.Room.databaseBuilder(
@@ -219,7 +238,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "zendrive_db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

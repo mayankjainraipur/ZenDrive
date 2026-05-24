@@ -4,10 +4,12 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.materialswitch.MaterialSwitch
 import android.widget.TextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -17,6 +19,7 @@ import kotlinx.coroutines.launch
 class ProfileActivity : AppCompatActivity() {
 
     private lateinit var viewModel: LogViewModel
+    private lateinit var db: AppDatabase
     private var currentProfile: UserProfile? = null
 
     private lateinit var readSection: View
@@ -31,12 +34,13 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var etMobile: TextInputEditText
     private lateinit var etCurrency: TextInputEditText
     private lateinit var layoutDisplayName: TextInputLayout
+    private lateinit var switchAppLock: MaterialSwitch
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
-        val db = AppDatabase.getInstance(this)
+        db = AppDatabase.getInstance(this)
         val factory = ViewModelFactory(
             db.vehicleDao(),
             db.vehicleEventDao(),
@@ -64,6 +68,8 @@ class ProfileActivity : AppCompatActivity() {
         etCurrency = findViewById(R.id.etCurrency)
         layoutDisplayName = findViewById(R.id.layoutDisplayName)
 
+        switchAppLock = findViewById(R.id.switchAppLock)
+
         // Buttons
         findViewById<MaterialButton>(R.id.btnEdit).setOnClickListener { enterEditMode() }
         findViewById<MaterialButton>(R.id.btnCancel).setOnClickListener { enterReadMode() }
@@ -73,9 +79,42 @@ class ProfileActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.userProfileFlow.collectLatest { profile ->
                 currentProfile = profile
-                profile?.let { bindReadMode(it) }
+                profile?.let {
+                    bindReadMode(it)
+                    switchAppLock.setOnCheckedChangeListener(null)
+                    switchAppLock.isChecked = it.appLockEnabled
+                    switchAppLock.setOnCheckedChangeListener { _, isChecked ->
+                        onAppLockToggled(isChecked)
+                    }
+                }
             }
         }
+    }
+
+    private fun onAppLockToggled(isChecked: Boolean) {
+        val profile = currentProfile ?: return
+        if (isChecked && !canUseBiometric()) {
+            switchAppLock.isChecked = false
+            Toast.makeText(this, R.string.biometric_not_available, Toast.LENGTH_LONG).show()
+            return
+        }
+        val updated = profile.copy(
+            appLockEnabled = isChecked,
+            updatedAt = System.currentTimeMillis()
+        )
+        lifecycleScope.launch {
+            db.userProfileDao().upsert(updated)
+        }
+        val msg = if (isChecked) R.string.app_lock_enabled else R.string.app_lock_disabled
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun canUseBiometric(): Boolean {
+        val biometricManager = BiometricManager.from(this)
+        return biometricManager.canAuthenticate(
+            BiometricManager.Authenticators.BIOMETRIC_WEAK or
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        ) == BiometricManager.BIOMETRIC_SUCCESS
     }
 
     private fun bindReadMode(profile: UserProfile) {

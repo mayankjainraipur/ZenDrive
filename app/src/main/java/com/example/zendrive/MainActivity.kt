@@ -1,10 +1,17 @@
 package com.example.zendrive
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ScrollView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -23,6 +30,23 @@ class MainActivity : AppCompatActivity() {
     /** Latest profile from DB; avoids stale null from StateFlow before Room emits. */
     private var currentProfile: UserProfile? = null
 
+    private var notificationPermissionRequested = false
+    private var appLockChecked = false
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* granted or denied — no further action needed */ }
+
+    private val appLockLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            appLockChecked = true
+        } else {
+            finishAffinity()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -36,6 +60,17 @@ class MainActivity : AppCompatActivity() {
         )
         viewModel = ViewModelProvider(this, factory)[LogViewModel::class.java]
 
+        if (!appLockChecked) {
+            lifecycleScope.launch {
+                val profile = db.userProfileDao().getProfile()
+                if (profile?.appLockEnabled == true) {
+                    appLockLauncher.launch(Intent(this@MainActivity, AppLockActivity::class.java))
+                } else {
+                    appLockChecked = true
+                }
+            }
+        }
+
         onboardingOverlay = findViewById(R.id.onboardingOverlay)
         fragmentContainer = findViewById(R.id.fragmentContainer)
         bottomNav = findViewById(R.id.bottomNav)
@@ -47,7 +82,6 @@ class MainActivity : AppCompatActivity() {
             submitOnboardingProfile()
         }
 
-        // Set up bottom navigation
         bottomNav.setOnItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_vehicles -> {
@@ -58,6 +92,10 @@ class MainActivity : AppCompatActivity() {
                     showFragment(ExpensesFragment::class.java.simpleName)
                     true
                 }
+                R.id.nav_reminders -> {
+                    showFragment(RemindersFragment::class.java.simpleName)
+                    true
+                }
                 R.id.nav_sync -> {
                     showFragment(SyncFragment::class.java.simpleName)
                     true
@@ -66,7 +104,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Observe profile to show/hide onboarding
         lifecycleScope.launch {
             viewModel.userProfileFlow.collectLatest { profile ->
                 currentProfile = profile
@@ -75,23 +112,33 @@ class MainActivity : AppCompatActivity() {
                 bottomNav.visibility = if (!showOnboarding) View.VISIBLE else View.GONE
 
                 if (!showOnboarding && supportFragmentManager.fragments.isEmpty()) {
-                    // Load default fragment
                     showFragment(VehiclesFragment::class.java.simpleName)
                     bottomNav.selectedItemId = R.id.nav_vehicles
+                    requestNotificationPermissionIfNeeded()
                 }
             }
         }
+    }
 
-        // Load default fragment if not showing onboarding
-        if (savedInstanceState == null) {
-            lifecycleScope.launch {
-                viewModel.userProfileFlow.collectLatest { profile ->
-                    if (profile != null && supportFragmentManager.fragments.isEmpty()) {
-                        showFragment(VehiclesFragment::class.java.simpleName)
-                        bottomNav.selectedItemId = R.id.nav_vehicles
-                    }
+    private fun requestNotificationPermissionIfNeeded() {
+        if (notificationPermissionRequested) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            == PackageManager.PERMISSION_GRANTED) return
+
+        notificationPermissionRequested = true
+
+        if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.notification_permission_title)
+                .setMessage(R.string.notification_permission_message)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
-            }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        } else {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
@@ -99,17 +146,16 @@ class MainActivity : AppCompatActivity() {
         val fragmentManager = supportFragmentManager
         val currentFragment = fragmentManager.fragments.find { it.isVisible }
 
-        // Hide current fragment
         currentFragment?.let {
             fragmentManager.beginTransaction().hide(it).commitNow()
         }
 
-        // Show or create new fragment
         var fragment = fragmentManager.findFragmentByTag(tag)
         if (fragment == null) {
             fragment = when (tag) {
                 VehiclesFragment::class.java.simpleName -> VehiclesFragment()
                 ExpensesFragment::class.java.simpleName -> ExpensesFragment()
+                RemindersFragment::class.java.simpleName -> RemindersFragment()
                 SyncFragment::class.java.simpleName -> SyncFragment()
                 else -> VehiclesFragment()
             }
@@ -139,10 +185,5 @@ class MainActivity : AppCompatActivity() {
                 .orEmpty(),
             existing = null
         )
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.fetchVehicles()
     }
 }

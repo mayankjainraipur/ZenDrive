@@ -27,16 +27,22 @@ class VehiclesFragment : Fragment() {
 
     private lateinit var viewModel: LogViewModel
     private lateinit var adapter: VehicleAdapter
+    private lateinit var archivedAdapter: VehicleAdapter
 
     private var allVehicles: List<Vehicle> = emptyList()
+    private var allArchivedVehicles: List<Vehicle> = emptyList()
     private var searchQuery: String = ""
     private var searchExpanded: Boolean = false
+    private var archivedExpanded: Boolean = false
 
     private lateinit var emptyState: LinearLayout
     private lateinit var tvNoSearchMatches: TextView
     private lateinit var recycler: RecyclerView
     private lateinit var searchLayout: TextInputLayout
     private lateinit var editSearch: TextInputEditText
+    private lateinit var archivedHeader: LinearLayout
+    private lateinit var recyclerArchived: RecyclerView
+    private lateinit var btnToggleArchived: ImageButton
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -69,14 +75,27 @@ class VehiclesFragment : Fragment() {
         val btnProfile = view.findViewById<ImageButton>(R.id.btnProfile)
         val fab = view.findViewById<ExtendedFloatingActionButton>(R.id.fabAddVehicle)
 
-        adapter = VehicleAdapter { vehicle ->
+        archivedHeader = view.findViewById(R.id.archivedHeader)
+        recyclerArchived = view.findViewById(R.id.recyclerArchivedVehicles)
+        btnToggleArchived = view.findViewById(R.id.btnToggleArchived)
+
+        val onVehicleClick: (Vehicle) -> Unit = { vehicle ->
             val intent = Intent(activity, VehicleDetailActivity::class.java)
             intent.putExtra("vehicleId", vehicle.id)
             startActivity(intent)
         }
 
+        adapter = VehicleAdapter(onVehicleClick)
+        archivedAdapter = VehicleAdapter(onVehicleClick)
+
         recycler.layoutManager = LinearLayoutManager(activity)
         recycler.adapter = adapter
+
+        recyclerArchived.layoutManager = LinearLayoutManager(activity)
+        recyclerArchived.adapter = archivedAdapter
+
+        archivedHeader.setOnClickListener { toggleArchivedSection() }
+        btnToggleArchived.setOnClickListener { toggleArchivedSection() }
 
         btnProfile.setOnClickListener {
             startActivity(Intent(activity, ProfileActivity::class.java))
@@ -124,14 +143,30 @@ class VehiclesFragment : Fragment() {
             }
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.archivedVehicles.collectLatest { archived ->
+                allArchivedVehicles = archived
+                archivedAdapter.submitList(archived)
+                archivedHeader.visibility = if (archived.isNotEmpty()) View.VISIBLE else View.GONE
+                if (archived.isEmpty()) {
+                    recyclerArchived.visibility = View.GONE
+                    archivedExpanded = false
+                    btnToggleArchived.setImageResource(R.drawable.ic_expand_more)
+                }
+            }
+        }
+
         fab.setOnClickListener {
             startActivity(Intent(activity, AddVehicleActivity::class.java))
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        viewModel.fetchVehicles()
+    private fun toggleArchivedSection() {
+        archivedExpanded = !archivedExpanded
+        recyclerArchived.visibility = if (archivedExpanded) View.VISIBLE else View.GONE
+        btnToggleArchived.setImageResource(
+            if (archivedExpanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more
+        )
     }
 
     private fun filteredVehicles(): List<Vehicle> {

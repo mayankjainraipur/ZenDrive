@@ -12,8 +12,15 @@ import java.util.Date
 import java.util.Locale
 
 class ExpenseAdapter(
-    private val currencyCode: String = "INR"
+    private var currencyCode: String = "INR"
 ) : ListAdapter<VehicleEvent, ExpenseAdapter.VH>(DIFF) {
+
+    fun updateCurrency(code: String) {
+        if (currencyCode != code) {
+            currencyCode = code
+            notifyItemRangeChanged(0, itemCount)
+        }
+    }
 
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<VehicleEvent>() {
@@ -54,6 +61,6 @@ class ExpenseAdapter(
         holder.date.text = dateFormat.format(Date(event.date))
 
         val costValue = event.cost ?: 0.0
-        holder.cost.text = "$currencyCode ${String.format("%,.2f", costValue)}"
+        holder.cost.text = "$currencyCode ${String.format(Locale.getDefault(), "%,.2f", costValue)}"
     }
 }

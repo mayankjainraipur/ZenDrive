@@ -4,31 +4,30 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:id="@+id/mainCoordinator"
+    <LinearLayout
+        android:id="@+id/mainContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/primary">
+        android:background="@color/primary"
+        android:orientation="vertical">
 
-        <!-- Fragment Container - marginBottom accounts for bottom nav height -->
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/fragmentContainer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginBottom="56dp" />
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
-        <!-- Bottom Navigation -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNav"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:background="@color/surface"
-            app:itemIconTint="@color/accent"
-            app:itemTextColor="@color/text_primary"
+            android:background="@color/md_surface_variant"
+            app:itemIconTint="@color/bottom_nav_item_color"
+            app:itemTextColor="@color/bottom_nav_item_color"
+            app:labelVisibilityMode="labeled"
             app:menu="@menu/bottom_nav_menu" />
 
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </LinearLayout>
 
     <!-- First-run profile capture -->
     <ScrollView
@@ -48,9 +47,10 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="48dp"
                 android:text="@string/welcome_title"
-                android:textAppearance="@style/ZenDrive.ToolbarTitle" />
+                android:textAppearance="@style/ZenDrive.ToolbarTitle"
+                android:textSize="28sp" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -71,8 +71,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="@string/continue_setup"
-                app:backgroundTint="@color/accent" />
+                android:text="@string/continue_setup" />
         </LinearLayout>
     </ScrollView>
 </FrameLayout>
