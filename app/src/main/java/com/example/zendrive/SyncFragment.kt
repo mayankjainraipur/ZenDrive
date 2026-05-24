@@ -77,7 +77,7 @@ class SyncFragment : Fragment() {
     }
 
     private fun updateAccountInfo(profile: UserProfile?) {
-        val email = profile?.driveAccountEmail
+        val email = profile?.email
         if (email.isNullOrBlank()) {
             tvAccountEmail.text = getString(R.string.sync_no_account)
         } else {

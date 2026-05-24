@@ -54,7 +54,7 @@ class LogViewModel(
         try {
             val profile = userProfileDao.getProfile()
 
-            if (profile?.driveAccountEmail.isNullOrBlank()) {
+            if (profile?.email.isNullOrBlank()) {
                 _syncStatus.value = SyncStatus.Error("No Google account linked. Please add an account in Profile settings.")
                 return
             }
@@ -62,9 +62,10 @@ class LogViewModel(
             // Simulate sync delay
             kotlinx.coroutines.delay(1500)
 
-            // Update last backup time
+            // Update last backup time - also set driveAccountEmail if not already set
             val updatedProfile = profile?.copy(
                 lastBackupAt = System.currentTimeMillis(),
+                driveAccountEmail = profile.driveAccountEmail ?: profile.email,
                 updatedAt = System.currentTimeMillis()
             )
             if (updatedProfile != null) {
