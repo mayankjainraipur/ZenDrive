@@ -6,6 +6,8 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 // ─── Vehicle ────────────────────────────────────────────────────────────────
 
@@ -25,6 +27,8 @@ data class Vehicle(
     val purchaseDate: Long? = null,
     val odometerReading: Double = 0.0,
     val notes: String? = null,
+    val isArchived: Boolean = false,
+    val archivedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )
@@ -83,18 +87,149 @@ data class EventMeta(
 // ─── AppDatabase ─────────────────────────────────────────────────────────────
 
 @Database(
-    entities = [Vehicle::class, VehicleEvent::class, EventMeta::class],
-    version = 1,
+    entities = [
+        Vehicle::class,
+        VehicleEvent::class,
+        EventMeta::class,
+        UserProfile::class,
+        VehicleDocument::class,
+        Reminder::class,
+        BackupRestoreLog::class
+    ],
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun vehicleDao(): VehicleDao
     abstract fun vehicleEventDao(): VehicleEventDao
     abstract fun eventMetaDao(): EventMetaDao
+    abstract fun userProfileDao(): UserProfileDao
+    abstract fun vehicleDocumentDao(): VehicleDocumentDao
+    abstract fun reminderDao(): ReminderDao
+    abstract fun backupRestoreLogDao(): BackupRestoreLogDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `user_profile` (
+                      `id` INTEGER NOT NULL,
+                      `displayName` TEXT NOT NULL,
+                      `email` TEXT NOT NULL,
+                      `mobileNumber` TEXT,
+                      `preferredCurrencyCode` TEXT NOT NULL,
+                      `backupEnabled` INTEGER NOT NULL,
+                      `lastBackupAt` INTEGER,
+                      `lastRestoreAt` INTEGER,
+                      `driveAccountEmail` TEXT,
+                      `createdAt` INTEGER NOT NULL,
+                      `updatedAt` INTEGER NOT NULL,
+                      PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `vehicle_documents` (
+                      `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                      `vehicleId` INTEGER NOT NULL,
+                      `title` TEXT NOT NULL,
+                      `documentType` TEXT NOT NULL,
+                      `fileName` TEXT NOT NULL,
+                      `mimeType` TEXT,
+                      `storageUri` TEXT NOT NULL,
+                      `fileSizeBytes` INTEGER,
+                      `expiresAt` INTEGER,
+                      `notes` TEXT,
+                      `createdAt` INTEGER NOT NULL,
+                      `updatedAt` INTEGER NOT NULL,
+                      FOREIGN KEY(`vehicleId`) REFERENCES `vehicle`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_vehicle_documents_vehicleId` " +
+                        "ON `vehicle_documents` (`vehicleId`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_vehicle_documents_vehicleId_documentType` " +
+                        "ON `vehicle_documents` (`vehicleId`, `documentType`)"
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `reminder` (
+                      `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                      `vehicleId` INTEGER NOT NULL,
+                      `eventId` INTEGER,
+                      `title` TEXT NOT NULL,
+                      `description` TEXT,
+                      `reminderType` TEXT NOT NULL,
+                      `dueAt` INTEGER NOT NULL,
+                      `repeatRule` TEXT NOT NULL,
+                      `isCompleted` INTEGER NOT NULL,
+                      `completedAt` INTEGER,
+                      `notifyAt` INTEGER,
+                      `createdAt` INTEGER NOT NULL,
+                      `updatedAt` INTEGER NOT NULL,
+                      FOREIGN KEY(`vehicleId`) REFERENCES `vehicle`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE,
+                      FOREIGN KEY(`eventId`) REFERENCES `vehicle_event`(`id`)
+                        ON UPDATE NO ACTION ON DELETE SET NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_reminder_vehicleId` ON `reminder` (`vehicleId`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_reminder_eventId` ON `reminder` (`eventId`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_reminder_dueAt` ON `reminder` (`dueAt`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_reminder_vehicleId_dueAt` " +
+                        "ON `reminder` (`vehicleId`, `dueAt`)"
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `backup_restore_log` (
+                      `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                      `operationType` TEXT NOT NULL,
+                      `startedAt` INTEGER NOT NULL,
+                      `completedAt` INTEGER,
+                      `status` TEXT NOT NULL,
+                      `driveFileId` TEXT,
+                      `bytesProcessed` INTEGER,
+                      `errorMessage` TEXT,
+                      `clientAppVersion` TEXT
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `distanceUnit` TEXT NOT NULL DEFAULT 'km'")
+                db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `dateFormatPattern` TEXT NOT NULL DEFAULT 'dd MMM yyyy'")
+                db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `themeMode` TEXT NOT NULL DEFAULT 'dark'")
+                db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `reminderLeadDays` INTEGER NOT NULL DEFAULT 3")
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `vehicle` ADD COLUMN `isArchived` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `vehicle` ADD COLUMN `archivedAt` INTEGER")
+                db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `appLockEnabled` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
 
         fun getInstance(context: android.content.Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -103,6 +238,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "zendrive_db"
                 )
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

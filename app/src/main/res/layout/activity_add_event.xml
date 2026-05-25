@@ -82,8 +82,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="14dp"
                 app:endIconMode="custom"
-                app:endIconDrawable="@android:drawable/ic_menu_my_calendar"
-                app:endIconTint="@color/accent"
+                app:endIconDrawable="@drawable/ic_calendar"
                 android:hint="@string/date">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etDate"
@@ -142,8 +141,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 app:endIconMode="custom"
-                app:endIconDrawable="@android:drawable/ic_menu_my_calendar"
-                app:endIconTint="@color/accent"
+                app:endIconDrawable="@drawable/ic_calendar"
                 android:hint="@string/next_due_date">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etNextDueDate"
@@ -173,7 +171,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Extra Fields"
+                    android:text="@string/extra_fields"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:textStyle="bold" />

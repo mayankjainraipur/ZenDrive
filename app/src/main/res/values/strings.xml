@@ -77,4 +77,222 @@
         <item>Tax</item>
         <item>Other</item>
     </string-array>
+
+    <!-- User profile -->
+    <string name="welcome_title">Welcome</string>
+    <string name="welcome_subtitle">Enter your display name to get started. Other fields are optional.</string>
+    <string name="profile_username">Username</string>
+    <string name="profile_email">Email</string>
+    <string name="profile_mobile">Mobile</string>
+    <string name="profile_currency">Preferred currency</string>
+    <string name="profile_currency_hint">ISO code, e.g. INR (default)</string>
+    <string name="profile_title">Your profile</string>
+    <string name="continue_setup">Continue</string>
+    <string name="edit_profile">Edit</string>
+    <string name="profile_empty_placeholder">Not set</string>
+    <string name="profile_username_required">Username is required</string>
+
+    <!-- Bottom Navigation -->
+    <string name="tab_vehicles">Vehicles</string>
+    <string name="tab_expenses">Expenses</string>
+    <string name="tab_sync">Sync</string>
+
+    <!-- Expenses -->
+    <string name="select_vehicle">Select Vehicle</string>
+    <string name="time_range">Time Range</string>
+    <string name="no_vehicles_for_expenses">No vehicles found. Please add a vehicle to view expenses.</string>
+    <string name="no_expenses_recorded">No expenses recorded. Total: 0</string>
+    <string name="expense_total">Total: %1$s</string>
+    <string name="time_last_1_month">Last 1 Month</string>
+    <string name="time_last_3_months">Last 3 Months</string>
+    <string name="time_last_6_months">Last 6 Months</string>
+    <string name="time_last_1_year">Last 1 Year</string>
+    <string name="time_all_time">All Time</string>
+
+    <!-- Sync / Backup -->
+    <string name="sync_button">Sync</string>
+    <string name="sync_in_progress">Sync in progress…</string>
+    <string name="sync_completed">Sync completed successfully</string>
+    <string name="sync_permission_required">Permission required</string>
+    <string name="sync_add_account">Please add a Google account to sync</string>
+    <string name="sync_account_email">Google Account: %1$s</string>
+    <string name="sync_no_account">No Google account linked</string>
+    <string name="sync_last_backup">Last backup: %1$s</string>
+    <string name="sync_last_restore">Last restore: %1$s</string>
+    <string name="sync_never">Never</string>
+
+    <!-- JSON Backup / Restore -->
+    <string name="backup_section_title">JSON BACKUP</string>
+    <string name="backup_description">Export all your data as a JSON file you can save anywhere, or restore from a previous backup.</string>
+    <string name="export_backup">Export</string>
+    <string name="import_backup">Restore</string>
+    <string name="backup_success">Backup exported successfully</string>
+    <string name="restore_success">Backup restored successfully</string>
+    <string name="backup_failed">Export failed: %1$s</string>
+    <string name="restore_failed">Restore failed: %1$s</string>
+    <string name="backup_in_progress">Working…</string>
+    <string name="backup_history">HISTORY</string>
+    <string name="backup_history_empty">No backup or restore activity yet.</string>
+    <string name="backup_confirm_restore">Restore backup?</string>
+    <string name="restore_warning">This will replace all current data with the contents of the backup file. This action cannot be undone.</string>
+    <string name="restore_proceed">Restore</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Google Drive section -->
+    <string name="drive_section_title">GOOGLE DRIVE</string>
+    <string name="drive_account_label">Google Drive Account</string>
+    <string name="drive_sync_button">Sync with Drive</string>
+    <string name="drive_coming_soon">Coming soon</string>
+    <string name="last_backup_label">Last Backup:</string>
+    <string name="last_restore_label">Last Restore:</string>
+    <string name="drive_sign_in">Sign in with Google</string>
+    <string name="drive_sign_out">Sign out</string>
+    <string name="drive_sign_in_prompt">Sign in to Google to back up your data to Drive. Backups are stored in the app\'s private folder and are not visible in your Drive.</string>
+    <string name="drive_backup">Backup</string>
+    <string name="drive_restore">Restore</string>
+    <string name="drive_auto_backup">Auto backup (daily)</string>
+    <string name="drive_auto_backup_hint">Backs up automatically once a day on Wi-Fi</string>
+    <string name="drive_backup_started">Uploading backup to Drive…</string>
+    <string name="drive_backup_success">Backup uploaded to Drive</string>
+    <string name="drive_restore_started">Restoring from Drive…</string>
+    <string name="drive_restore_success">Data restored from Drive</string>
+    <string name="drive_no_backups">No backups found on Drive</string>
+    <string name="drive_select_backup">Select a backup to restore</string>
+    <string name="drive_restore_confirm">Restore from Drive?</string>
+    <string name="drive_restore_warning">This will replace all current data with the selected Drive backup. This action cannot be undone.</string>
+    <string name="drive_sign_out_confirm">Disconnect Google Drive?</string>
+    <string name="drive_sign_out_warning">Auto-backup will be disabled and your Drive account will be disconnected. Existing backups on Drive will not be deleted.</string>
+
+    <!-- Reminders -->
+    <string name="tab_reminders">Reminders</string>
+    <string name="add_reminder">Add reminder</string>
+    <string name="edit_reminder">Edit reminder</string>
+    <string name="no_reminders">No reminders yet.\nTap + to add your first reminder.</string>
+    <string name="reminder_title">Title</string>
+    <string name="reminder_description">Description</string>
+    <string name="reminder_type">Reminder Type</string>
+    <string name="due_date">Due Date</string>
+    <string name="repeat_rule">Repeat</string>
+    <string name="save_reminder">Save Reminder</string>
+    <string name="reminder_saved">Reminder saved</string>
+    <string name="reminder_updated">Reminder updated</string>
+    <string name="reminder_completed">Reminder completed</string>
+    <string name="reminder_overdue">Overdue</string>
+    <string name="link_to_event">Link to Event (optional)</string>
+    <string name="no_events_to_link">No events</string>
+    <string name="notification_permission_title">Enable Notifications</string>
+    <string name="notification_permission_message">ZenDrive needs notification permission to send you reminders for services, insurance, and document renewals.</string>
+
+    <!-- Reminder types -->
+    <string-array name="reminder_types">
+        <item>Service</item>
+        <item>Insurance</item>
+        <item>Tax</item>
+        <item>Document Expiry</item>
+        <item>Custom</item>
+    </string-array>
+
+    <!-- Reminder type values (lowercase keys stored in DB) -->
+    <string-array name="reminder_type_values">
+        <item>service</item>
+        <item>insurance</item>
+        <item>tax</item>
+        <item>document_expiry</item>
+        <item>custom</item>
+    </string-array>
+
+    <!-- Repeat rules -->
+    <string-array name="repeat_rules">
+        <item>None</item>
+        <item>Daily</item>
+        <item>Weekly</item>
+        <item>Monthly</item>
+        <item>Yearly</item>
+    </string-array>
+
+    <!-- Repeat rule values (lowercase keys stored in DB) -->
+    <string-array name="repeat_rule_values">
+        <item>none</item>
+        <item>daily</item>
+        <item>weekly</item>
+        <item>monthly</item>
+        <item>yearly</item>
+    </string-array>
+
+    <!-- Documents -->
+    <string name="documents_title">Documents</string>
+    <string name="add_document">Add document</string>
+    <string name="edit_document">Edit document</string>
+    <string name="no_documents">No documents attached yet.</string>
+    <string name="document_type">Document Type</string>
+    <string name="document_title">Title</string>
+    <string name="choose_file">Choose file</string>
+    <string name="file_selected">File: %1$s</string>
+    <string name="expiry_date">Expiry Date</string>
+    <string name="save_document">Save Document</string>
+    <string name="document_saved">Document saved</string>
+    <string name="document_updated">Document updated</string>
+    <string name="document_expired">Expired</string>
+    <string name="document_expiring_soon">Expiring soon</string>
+    <string name="delete_document">Delete document</string>
+    <string name="delete_document_confirm">Delete document \"%1$s\"?</string>
+    <string name="document_deleted">Document deleted</string>
+    <string name="no_file_selected">Please choose a file</string>
+    <string name="cannot_open_file">Cannot open this file</string>
+    <string name="clear_expiry">Clear</string>
+
+    <string-array name="document_types">
+        <item>Insurance</item>
+        <item>Registration</item>
+        <item>PUC</item>
+        <item>Invoice</item>
+        <item>Warranty</item>
+        <item>Other</item>
+    </string-array>
+
+    <!-- App Lock / Biometric -->
+    <string name="app_lock">App Lock</string>
+    <string name="app_lock_description">Require biometric or device credential to open the app</string>
+    <string name="unlock_biometric">Unlock</string>
+    <string name="biometric_title">Unlock ZenDrive</string>
+    <string name="biometric_subtitle">Verify your identity to continue</string>
+    <string name="biometric_not_available">Biometric authentication is not available on this device</string>
+    <string name="app_lock_enabled">App lock enabled</string>
+    <string name="app_lock_disabled">App lock disabled</string>
+
+    <!-- Vehicle Archive -->
+    <string name="archive_vehicle">Archive</string>
+    <string name="unarchive_vehicle">Unarchive</string>
+    <string name="archived_vehicles">Archived Vehicles</string>
+    <string name="archive_confirm">Archive \"%1$s\"? It will be moved to the archived section.</string>
+
+    <!-- Validation -->
+    <string name="field_required">This field is required</string>
+    <string name="invalid_year">Enter a valid year (1900–present)</string>
+
+    <!-- Sync extra labels -->
+    <string name="sync_drive_account_label">Google Drive Account</string>
+    <string name="sync_last_backup_label">Last Backup:</string>
+    <string name="sync_last_restore_label">Last Restore:</string>
+    <string name="total_expenses_label">Total Expenses</string>
+
+    <!-- Fuel Analytics -->
+    <string name="fuel_efficiency">Fuel Efficiency</string>
+    <string name="cost_per_km">Cost per km</string>
+    <string name="total_fuel_cost">Total Fuel Cost</string>
+    <string name="total_distance">Total Distance</string>
+    <string name="fuel_fills">Fuel Fills</string>
+    <string name="category_breakdown">Category Breakdown</string>
+    <string name="no_fuel_data">No fuel records yet. Add fuel events with odometer readings to see efficiency stats.</string>
+    <string name="fuel_fills_count">%1$d fills</string>
+    <string name="cost_per_km_value">%1$s / km</string>
+
+    <!-- Vehicle detail labels -->
+    <string name="label_brand">Brand</string>
+    <string name="label_model">Model</string>
+    <string name="label_type">Type</string>
+    <string name="label_fuel">Fuel</string>
+    <string name="label_year">Year</string>
+    <string name="label_odometer">Odometer</string>
+    <string name="label_notes">Notes</string>
 </resources>

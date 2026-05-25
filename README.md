@@ -10,7 +10,7 @@
 
 </div>
 
-ZenDrive is a native Android app for owners who want a clear record of vehicles, maintenance events, and costs — without relying on a cloud backend. Data stays on the device via a local **Room** database.
+ZenDrive is a local-first, native Android app for owners who want a clear record of vehicles, maintenance events, and costs — without relying on a cloud backend. Data stays on the device via a local **Room** database. with optional feature of google drive backup and restore.
 
 ---
 
