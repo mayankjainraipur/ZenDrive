@@ -1,0 +1,8 @@
+ZenDrive is a vehicle management application that helps users organize,
+browse, and manage vehicles efficiently on Android devices.
+
+Features:
+• Fast vehicle browsing
+• Clean Material Design interface
+• Local vehicle management
+• No advertisements
