@@ -240,6 +240,46 @@
     <string name="no_file_selected">Please choose a file</string>
     <string name="cannot_open_file">Cannot open this file</string>
     <string name="document_copy_failed">Couldn\'t read that file. Choose it again.</string>
+
+    <!-- ═══ Preferences ═══ -->
+    <string name="preferences_title">Preferences</string>
+    <string name="pref_distance_unit">Distance unit</string>
+    <string name="pref_date_format">Date format</string>
+    <string name="pref_theme">Theme</string>
+    <string name="pref_reminder_lead">Remind me before</string>
+    <string name="pref_saved">Preferences updated</string>
+
+    <string name="theme_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+
+    <string name="unit_km">Kilometres (km)</string>
+    <string name="unit_mi">Miles (mi)</string>
+
+    <string-array name="date_format_labels">
+        <item>31 Dec 2025</item>
+        <item>31/12/2025</item>
+        <item>12/31/2025</item>
+        <item>2025-12-31</item>
+    </string-array>
+
+    <string-array name="date_format_patterns" translatable="false">
+        <item>dd MMM yyyy</item>
+        <item>dd/MM/yyyy</item>
+        <item>MM/dd/yyyy</item>
+        <item>yyyy-MM-dd</item>
+    </string-array>
+
+    <string-array name="reminder_lead_labels">
+        <item>On the day</item>
+        <item>1 day before</item>
+        <item>2 days before</item>
+        <item>3 days before</item>
+        <item>1 week before</item>
+        <item>2 weeks before</item>
+        <item>1 month before</item>
+    </string-array>
+
     <string name="clear_expiry">Clear</string>
 
     <string-array name="document_types">

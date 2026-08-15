@@ -11,6 +11,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import android.widget.TextView
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.flow.collectLatest
@@ -35,6 +36,18 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var etCurrency: TextInputEditText
     private lateinit var layoutDisplayName: TextInputLayout
     private lateinit var switchAppLock: MaterialSwitch
+
+    private lateinit var actvTheme: MaterialAutoCompleteTextView
+    private lateinit var actvDistanceUnit: MaterialAutoCompleteTextView
+    private lateinit var actvDateFormat: MaterialAutoCompleteTextView
+    private lateinit var actvReminderLead: MaterialAutoCompleteTextView
+
+    /** Suppresses the change callbacks fired while binding values in from the profile. */
+    private var bindingPreferences = false
+
+    private val themeValues = listOf(UserPrefs.THEME_SYSTEM, UserPrefs.THEME_LIGHT, UserPrefs.THEME_DARK)
+    private val distanceValues = listOf("km", "mi")
+    private val leadDayValues = listOf(0, 1, 2, 3, 7, 14, 30)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,6 +83,12 @@ class ProfileActivity : AppCompatActivity() {
 
         switchAppLock = findViewById(R.id.switchAppLock)
 
+        actvTheme = findViewById(R.id.actvTheme)
+        actvDistanceUnit = findViewById(R.id.actvDistanceUnit)
+        actvDateFormat = findViewById(R.id.actvDateFormat)
+        actvReminderLead = findViewById(R.id.actvReminderLead)
+        setupPreferences()
+
         // Buttons
         findViewById<MaterialButton>(R.id.btnEdit).setOnClickListener { enterEditMode() }
         findViewById<MaterialButton>(R.id.btnCancel).setOnClickListener { enterReadMode() }
@@ -81,6 +100,7 @@ class ProfileActivity : AppCompatActivity() {
                 currentProfile = profile
                 profile?.let {
                     bindReadMode(it)
+                    bindPreferences(it)
                     switchAppLock.setOnCheckedChangeListener(null)
                     switchAppLock.isChecked = it.appLockEnabled
                     switchAppLock.setOnCheckedChangeListener { _, isChecked ->
@@ -89,6 +109,85 @@ class ProfileActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun setupPreferences() {
+        val themeLabels = listOf(
+            getString(R.string.theme_system),
+            getString(R.string.theme_light),
+            getString(R.string.theme_dark)
+        )
+        val distanceLabels = listOf(getString(R.string.unit_km), getString(R.string.unit_mi))
+        val dateLabels = resources.getStringArray(R.array.date_format_labels).toList()
+        val leadLabels = resources.getStringArray(R.array.reminder_lead_labels).toList()
+
+        actvTheme.setSimpleItems(themeLabels.toTypedArray())
+        actvDistanceUnit.setSimpleItems(distanceLabels.toTypedArray())
+        actvDateFormat.setSimpleItems(dateLabels.toTypedArray())
+        actvReminderLead.setSimpleItems(leadLabels.toTypedArray())
+
+        actvTheme.setOnItemClickListener { _, _, position, _ ->
+            savePreferences { it.copy(themeMode = themeValues[position]) }
+            // savePreferences has already mirrored the new value, so this repaints correctly.
+            UserPrefs.applyTheme()
+        }
+        actvDistanceUnit.setOnItemClickListener { _, _, position, _ ->
+            savePreferences { it.copy(distanceUnit = distanceValues[position]) }
+        }
+        actvDateFormat.setOnItemClickListener { _, _, position, _ ->
+            val patterns = resources.getStringArray(R.array.date_format_patterns)
+            savePreferences { it.copy(dateFormatPattern = patterns[position]) }
+        }
+        actvReminderLead.setOnItemClickListener { _, _, position, _ ->
+            savePreferences { it.copy(reminderLeadDays = leadDayValues[position]) }
+        }
+    }
+
+    private fun bindPreferences(profile: UserProfile) {
+        bindingPreferences = true
+
+        val themeIndex = themeValues.indexOf(profile.themeMode).coerceAtLeast(0)
+        actvTheme.setText(
+            listOf(
+                getString(R.string.theme_system),
+                getString(R.string.theme_light),
+                getString(R.string.theme_dark)
+            )[themeIndex],
+            false
+        )
+
+        val unitIndex = distanceValues.indexOf(profile.distanceUnit).coerceAtLeast(0)
+        actvDistanceUnit.setText(
+            listOf(getString(R.string.unit_km), getString(R.string.unit_mi))[unitIndex], false
+        )
+
+        val patterns = resources.getStringArray(R.array.date_format_patterns)
+        val dateIndex = patterns.indexOf(profile.dateFormatPattern).coerceAtLeast(0)
+        actvDateFormat.setText(
+            resources.getStringArray(R.array.date_format_labels)[dateIndex], false
+        )
+
+        val leadIndex = leadDayValues.indexOf(profile.reminderLeadDays).coerceAtLeast(0)
+        actvReminderLead.setText(
+            resources.getStringArray(R.array.reminder_lead_labels)[leadIndex], false
+        )
+
+        bindingPreferences = false
+    }
+
+    /** Preferences apply on selection — no edit/save round trip, same as the app-lock switch. */
+    private fun savePreferences(change: (UserProfile) -> UserProfile) {
+        if (bindingPreferences) return
+        val profile = currentProfile ?: return
+        val updated = change(profile).copy(updatedAt = System.currentTimeMillis())
+        currentProfile = updated
+        UserPrefs.mirror(updated)
+        // Application-scoped: a theme change recreates this activity, and lifecycleScope would
+        // cancel the write half-done — after which the profile flow would mirror the old value back.
+        ZenDriveApp.instance.appScope.launch {
+            db.userProfileDao().upsert(updated)
+        }
+        Toast.makeText(this, R.string.pref_saved, Toast.LENGTH_SHORT).show()
     }
 
     private fun onAppLockToggled(isChecked: Boolean) {
