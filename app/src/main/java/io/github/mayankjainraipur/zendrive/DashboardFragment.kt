@@ -45,6 +45,16 @@ class DashboardFragment : Fragment() {
         tvNoVehicles = view.findViewById(R.id.tvNoVehicles)
         tvThisMonth = view.findViewById(R.id.tvThisMonth)
         tvMonthChange = view.findViewById(R.id.tvMonthChange)
+
+        view.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
+            .setOnMenuItemClickListener { item ->
+                if (item.itemId == R.id.action_search) {
+                    startActivity(Intent(requireContext(), SearchActivity::class.java))
+                    true
+                } else {
+                    false
+                }
+            }
     }
 
     // Reloads on every return so figures are never stale after adding an event elsewhere.

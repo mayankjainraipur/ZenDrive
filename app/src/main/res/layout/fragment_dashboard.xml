@@ -13,6 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/primary"
+        app:menu="@menu/menu_dashboard"
         app:title="@string/app_name"
         app:titleTextAppearance="@style/ZenDrive.ToolbarTitle" />
 

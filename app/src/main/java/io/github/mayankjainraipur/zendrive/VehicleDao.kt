@@ -43,6 +43,16 @@ interface VehicleDao {
 
     @Query("SELECT * FROM vehicle WHERE isArchived = 1 ORDER BY archivedAt DESC")
     fun observeArchivedVehicles(): Flow<List<Vehicle>>
+
+    @Query(
+        """
+        SELECT * FROM vehicle
+        WHERE name LIKE :pattern OR vehicleNumber LIKE :pattern
+           OR brand LIKE :pattern OR model LIKE :pattern OR notes LIKE :pattern
+        ORDER BY isArchived ASC, name ASC LIMIT :limit
+        """
+    )
+    suspend fun searchVehicles(pattern: String, limit: Int): List<Vehicle>
 }
 
 // ─── CategoryExpense (POJO for grouped query results) ───────────────────────
@@ -98,6 +108,15 @@ interface VehicleEventDao {
 
     @Query("SELECT id FROM vehicle_event")
     suspend fun getAllEventIds(): List<Int>
+
+    @Query(
+        """
+        SELECT * FROM vehicle_event
+        WHERE title LIKE :pattern OR description LIKE :pattern OR eventType LIKE :pattern
+        ORDER BY date DESC LIMIT :limit
+        """
+    )
+    suspend fun searchEvents(pattern: String, limit: Int): List<VehicleEvent>
 
     // --- Cross-vehicle totals, for the dashboard ---
 

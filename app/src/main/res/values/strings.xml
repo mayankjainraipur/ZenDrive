@@ -288,6 +288,16 @@
     <string name="reminder_overdue_days">Overdue by %1$d days</string>
     <string name="reminder_action_done">Mark done</string>
     <string name="reminder_action_snooze">Snooze a day</string>
+    <!-- ═══ Search ═══ -->
+    <string name="search_everything">Search</string>
+    <string name="search_everything_hint">Search vehicles, events, documents, reminders</string>
+    <string name="search_hint">Type at least two characters.</string>
+    <string name="search_no_results">Nothing matches “%1$s”.</string>
+    <string name="search_section_vehicles">Vehicles</string>
+    <string name="search_section_events">Events</string>
+    <string name="search_section_documents">Documents</string>
+    <string name="search_section_reminders">Reminders</string>
+
     <!-- ═══ Reports ═══ -->
     <string name="report_export">Export report</string>
     <string name="report_choose_format">Export report</string>

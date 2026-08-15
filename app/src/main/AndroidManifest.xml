@@ -30,6 +30,7 @@
         <activity android:name=".AddDocumentActivity" />
         <activity android:name=".AddReminderActivity" />
         <activity android:name=".ServiceScheduleActivity" />
+        <activity android:name=".SearchActivity" />
         <activity
             android:name=".AppLockActivity"
             android:theme="@style/Theme.ZenDrive" />

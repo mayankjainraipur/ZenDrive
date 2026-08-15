@@ -48,6 +48,16 @@ interface VehicleDocumentDao {
     @Query("SELECT * FROM vehicle_documents WHERE expiresAt IS NOT NULL")
     suspend fun getDocumentsWithExpiry(): List<VehicleDocument>
 
+    @Query(
+        """
+        SELECT * FROM vehicle_documents
+        WHERE title LIKE :pattern OR documentType LIKE :pattern
+           OR fileName LIKE :pattern OR notes LIKE :pattern
+        ORDER BY createdAt DESC LIMIT :limit
+        """
+    )
+    suspend fun searchDocuments(pattern: String, limit: Int): List<VehicleDocument>
+
     @Query("DELETE FROM vehicle_documents WHERE vehicleId = :vehicleId")
     suspend fun deleteAllForVehicle(vehicleId: Int)
 }
@@ -96,6 +106,15 @@ interface ReminderDao {
     /** Across all vehicles, soonest first — what the dashboard leads with. */
     @Query("SELECT * FROM reminder WHERE isCompleted = 0 ORDER BY dueAt ASC LIMIT :limit")
     suspend fun getUpcoming(limit: Int): List<Reminder>
+
+    @Query(
+        """
+        SELECT * FROM reminder
+        WHERE title LIKE :pattern OR description LIKE :pattern OR reminderType LIKE :pattern
+        ORDER BY dueAt ASC LIMIT :limit
+        """
+    )
+    suspend fun searchReminders(pattern: String, limit: Int): List<Reminder>
 
     @Query("DELETE FROM reminder WHERE vehicleId = :vehicleId")
     suspend fun deleteAllForVehicle(vehicleId: Int)
