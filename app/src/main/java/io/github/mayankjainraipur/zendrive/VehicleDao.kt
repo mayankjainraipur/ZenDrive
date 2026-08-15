@@ -96,6 +96,9 @@ interface VehicleEventDao {
     @Query("SELECT * FROM vehicle_event WHERE odometer IS NOT NULL AND odometer > 0")
     suspend fun getAllEventsWithOdometer(): List<VehicleEvent>
 
+    @Query("SELECT id FROM vehicle_event")
+    suspend fun getAllEventIds(): List<Int>
+
     // --- Cross-vehicle totals, for the dashboard ---
 
     @Query(

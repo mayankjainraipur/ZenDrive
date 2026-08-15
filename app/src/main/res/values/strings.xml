@@ -288,6 +288,17 @@
     <string name="reminder_overdue_days">Overdue by %1$d days</string>
     <string name="reminder_action_done">Mark done</string>
     <string name="reminder_action_snooze">Snooze a day</string>
+    <!-- ═══ Attachments ═══ -->
+    <string name="attachments">Photos &amp; receipts</string>
+    <string name="attachments_empty">Nothing attached yet.</string>
+    <string name="attachment_take_photo">Take photo</string>
+    <string name="attachment_pick">Choose file</string>
+    <string name="attachment_added">Attachment added</string>
+    <string name="attachment_deleted">Attachment removed</string>
+    <string name="attachment_delete_confirm">Remove this attachment?</string>
+    <string name="attachment_failed">Couldn\'t attach that file.</string>
+    <string name="attachment_no_camera">No camera app available</string>
+
     <!-- ═══ Dashboard ═══ -->
     <string name="tab_home">Home</string>
     <string name="dashboard_due_next">Due next</string>

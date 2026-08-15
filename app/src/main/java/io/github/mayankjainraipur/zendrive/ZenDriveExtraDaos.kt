@@ -135,6 +135,28 @@ interface OdometerLogDao {
 }
 
 @Dao
+interface AttachmentDao {
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(attachment: Attachment): Long
+
+    @Delete
+    suspend fun delete(attachment: Attachment)
+
+    @Query("SELECT * FROM attachment WHERE ownerType = :ownerType AND ownerId = :ownerId ORDER BY createdAt ASC")
+    suspend fun getForOwner(ownerType: String, ownerId: Int): List<Attachment>
+
+    @Query("SELECT * FROM attachment")
+    suspend fun getAll(): List<Attachment>
+
+    @Query("SELECT localFileName FROM attachment")
+    suspend fun getAllLocalFileNames(): List<String>
+
+    @Query("DELETE FROM attachment WHERE ownerType = :ownerType AND ownerId = :ownerId")
+    suspend fun deleteForOwner(ownerType: String, ownerId: Int)
+}
+
+@Dao
 interface BackupRestoreLogDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

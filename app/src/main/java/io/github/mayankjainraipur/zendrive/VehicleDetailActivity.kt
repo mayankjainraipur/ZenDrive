@@ -127,6 +127,9 @@ class VehicleDetailActivity : AppCompatActivity() {
                         docs.forEach {
                             DocumentStore.delete(this@VehicleDetailActivity, it.localFileName)
                         }
+                        // Events cascade away with the vehicle, and attachments hang off events
+                        // with no foreign key to follow, so they need clearing explicitly.
+                        AttachmentStore.pruneOrphans(this@VehicleDetailActivity, db)
                         finish()
                     }
                 }

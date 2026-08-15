@@ -13,7 +13,8 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 /**
- * A backup is a zip: `backup.json` plus every attached document under `documents/`.
+ * A backup is a zip: `backup.json`, every attached document under `documents/`, and every photo
+ * or receipt under `attachments/`.
  *
  * Backups written before this change were bare JSON, so [importFromBytes] sniffs the format and
  * still accepts them — those simply carry no files.
@@ -69,7 +70,7 @@ object JsonBackupManager {
             }
 
             val bundle = BackupBundle(
-                schemaVersion = 6,
+                schemaVersion = 7,
                 appVersion = getAppVersion(context),
                 exportedAt = System.currentTimeMillis(),
                 profile = profile?.let { BackupProfile.fromEntity(it) },
@@ -78,7 +79,10 @@ object JsonBackupManager {
                 eventMeta = allMeta.map { BackupEventMeta.fromEntity(it) },
                 reminders = allReminders.map { BackupReminder.fromEntity(it) },
                 documents = allDocuments.map { BackupDocument.fromEntity(it) },
-                odometerLogs = allOdometerLogs.map { BackupOdometerLog.fromEntity(it) }
+                odometerLogs = allOdometerLogs.map { BackupOdometerLog.fromEntity(it) },
+                attachments = db.attachmentDao().getAll()
+                    .filter { it.ownerType == Attachment.OWNER_EVENT }
+                    .map { BackupAttachment.fromEntity(it) }
             )
 
             json.encodeToString(BackupBundle.serializer(), bundle)
@@ -101,6 +105,14 @@ object JsonBackupManager {
                     file.inputStream().use { it.copyTo(zip) }
                     zip.closeEntry()
                 }
+
+                for (name in db.attachmentDao().getAllLocalFileNames()) {
+                    val file = AttachmentStore.fileFor(context, name)
+                    if (!file.exists()) continue
+                    zip.putNextEntry(ZipEntry(AttachmentStore.ARCHIVE_PREFIX + name))
+                    file.inputStream().use { it.copyTo(zip) }
+                    zip.closeEntry()
+                }
             }
             out.toByteArray()
         }
@@ -117,9 +129,15 @@ object JsonBackupManager {
                             if (entry.name == ENTRY_JSON) {
                                 found = zip.readBytes().toString(Charsets.UTF_8)
                             } else {
-                                // Written before the rows land; anything unclaimed is pruned below.
-                                DocumentStore.sanitizeArchiveEntry(entry.name)?.let { safeName ->
-                                    DocumentStore.writeRestored(context, safeName, zip.readBytes())
+                                // Each entry belongs to exactly one bucket, and its bytes can only
+                                // be read once — so decide first, then read.
+                                val documentName = DocumentStore.sanitizeArchiveEntry(entry.name)
+                                val attachmentName = AttachmentStore.sanitizeArchiveEntry(entry.name)
+                                when {
+                                    documentName != null ->
+                                        DocumentStore.writeRestored(context, documentName, zip.readBytes())
+                                    attachmentName != null ->
+                                        AttachmentStore.writeRestored(context, attachmentName, zip.readBytes())
                                 }
                             }
                             zip.closeEntry()
@@ -140,6 +158,7 @@ object JsonBackupManager {
             } finally {
                 // Clears both the documents the restore replaced and any files it failed to claim.
                 DocumentStore.pruneOrphans(context, db)
+                AttachmentStore.pruneOrphans(context, db)
             }
         }
 
@@ -151,7 +170,7 @@ object JsonBackupManager {
         withContext(Dispatchers.IO) {
             val bundle = json.decodeFromString(BackupBundle.serializer(), jsonString)
 
-            require(bundle.schemaVersion in 1..6) {
+            require(bundle.schemaVersion in 1..7) {
                 "Unsupported backup schema version: ${bundle.schemaVersion}"
             }
 
@@ -162,6 +181,7 @@ object JsonBackupManager {
                 val reminderDao = db.reminderDao()
                 val documentDao = db.vehicleDocumentDao()
                 val odometerDao = db.odometerLogDao()
+                val attachmentDao = db.attachmentDao()
                 val profileDao = db.userProfileDao()
 
                 val existingVehicles = vehicleDao.getAllVehicles()
@@ -202,6 +222,11 @@ object JsonBackupManager {
                 for (bd in bundle.documents) {
                     val newVehicleId = vehicleIdMap[bd.vehicleOriginalId] ?: continue
                     documentDao.insert(bd.toEntity(newVehicleId))
+                }
+
+                for (ba in bundle.attachments) {
+                    val newEventId = eventIdMap[ba.eventOriginalId] ?: continue
+                    attachmentDao.insert(ba.toEntity(newEventId))
                 }
 
                 for (bo in bundle.odometerLogs) {

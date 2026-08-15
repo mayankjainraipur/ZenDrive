@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Only the owned document copies are ever shared out, and only per-intent. -->
+    <!-- Only owned copies are ever shared out, and only per-intent. -->
     <files-path name="documents" path="documents/" />
+    <files-path name="attachments" path="attachments/" />
+    <!-- Where the camera writes before the capture is committed. -->
+    <cache-path name="captures" path="captures/" />
 </paths>

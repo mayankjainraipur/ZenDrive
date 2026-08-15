@@ -14,8 +14,40 @@ data class BackupBundle(
     val reminders: List<BackupReminder>,
     val documents: List<BackupDocument>,
     /** Hand-entered readings only; event-derived ones are rebuilt by OdometerSync on restore. */
-    val odometerLogs: List<BackupOdometerLog> = emptyList()
+    val odometerLogs: List<BackupOdometerLog> = emptyList(),
+    /** Photos and receipts; the files themselves travel under `attachments/` in the archive. */
+    val attachments: List<BackupAttachment> = emptyList()
 )
+
+@Serializable
+data class BackupAttachment(
+    /** Owning event's pre-import id; remapped on restore like every other reference. */
+    val eventOriginalId: Int,
+    val localFileName: String,
+    val mimeType: String? = null,
+    val caption: String? = null,
+    val createdAt: Long
+) {
+    fun toEntity(newEventId: Int): Attachment = Attachment(
+        id = 0,
+        ownerType = Attachment.OWNER_EVENT,
+        ownerId = newEventId,
+        localFileName = localFileName,
+        mimeType = mimeType,
+        caption = caption,
+        createdAt = createdAt
+    )
+
+    companion object {
+        fun fromEntity(e: Attachment) = BackupAttachment(
+            eventOriginalId = e.ownerId,
+            localFileName = e.localFileName,
+            mimeType = e.mimeType,
+            caption = e.caption,
+            createdAt = e.createdAt
+        )
+    }
+}
 
 @Serializable
 data class BackupOdometerLog(

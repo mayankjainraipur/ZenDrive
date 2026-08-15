@@ -104,9 +104,10 @@ data class EventMeta(
         VehicleDocument::class,
         Reminder::class,
         OdometerLog::class,
+        Attachment::class,
         BackupRestoreLog::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -117,6 +118,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun vehicleDocumentDao(): VehicleDocumentDao
     abstract fun reminderDao(): ReminderDao
     abstract fun odometerLogDao(): OdometerLogDao
+    abstract fun attachmentDao(): AttachmentDao
     abstract fun backupRestoreLogDao(): BackupRestoreLogDao
 
     companion object {
@@ -329,10 +331,34 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // No foreign key: the owner is polymorphic, so AttachmentStore.pruneOrphans does
+                // the cleanup a cascade would otherwise handle.
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `attachment` (
+                      `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                      `ownerType` TEXT NOT NULL,
+                      `ownerId` INTEGER NOT NULL,
+                      `localFileName` TEXT NOT NULL,
+                      `mimeType` TEXT,
+                      `caption` TEXT,
+                      `createdAt` INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_attachment_ownerType_ownerId` " +
+                        "ON `attachment` (`ownerType`, `ownerId`)"
+                )
+            }
+        }
+
         /** Single source of truth for the migration chain — the builder and the tests share it. */
         val ALL_MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
-            MIGRATION_6_7, MIGRATION_7_8
+            MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9
         )
 
         fun getInstance(context: android.content.Context): AppDatabase {

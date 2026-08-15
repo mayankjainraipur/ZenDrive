@@ -3,13 +3,10 @@ package io.github.mayankjainraipur.zendrive
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.Locale
-import java.util.UUID
 
 /**
  * Owns every file the user attaches as a document.
@@ -21,36 +18,28 @@ import java.util.UUID
  */
 object DocumentStore {
 
-    private const val DIR_NAME = "documents"
+    /** Bucket name; also the directory under filesDir. */
+    const val BUCKET = "documents"
 
     /** Path prefix for document entries inside a backup archive. */
     const val ARCHIVE_PREFIX = "documents/"
 
-    fun dir(context: Context): File =
-        File(context.filesDir, DIR_NAME).apply { if (!exists()) mkdirs() }
+    fun dir(context: Context): File = OwnedFiles.dir(context, BUCKET)
 
     fun fileFor(context: Context, localFileName: String): File =
-        File(dir(context), localFileName)
+        OwnedFiles.fileFor(context, BUCKET, localFileName)
 
     /** Copies [uri] into app-private storage and returns the generated local file name. */
     suspend fun copyIn(context: Context, uri: Uri, displayName: String?): String =
-        withContext(Dispatchers.IO) {
-            val target = File(dir(context), newFileName(context, uri, displayName))
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                target.outputStream().use { output -> input.copyTo(output) }
-            } ?: throw IllegalStateException("Cannot read the selected file")
-            target.name
-        }
+        OwnedFiles.copyIn(context, BUCKET, uri, displayName)
 
     /** Writes a document restored out of a backup archive. */
     fun writeRestored(context: Context, localFileName: String, bytes: ByteArray) {
         fileFor(context, localFileName).writeBytes(bytes)
     }
 
-    fun delete(context: Context, localFileName: String?) {
-        if (localFileName.isNullOrBlank()) return
-        runCatching { fileFor(context, localFileName).delete() }
-    }
+    fun delete(context: Context, localFileName: String?) =
+        OwnedFiles.delete(context, BUCKET, localFileName)
 
     /** A content URI another app can read, granted per-intent. */
     fun shareUri(context: Context, localFileName: String): Uri =
@@ -85,10 +74,7 @@ object DocumentStore {
 
     /** Deletes stored files no row points at — the backstop for cascaded vehicle deletes. */
     suspend fun pruneOrphans(context: Context, db: AppDatabase) = withContext(Dispatchers.IO) {
-        val referenced = db.vehicleDocumentDao().getAllLocalFileNames().toHashSet()
-        dir(context).listFiles()?.forEach { file ->
-            if (file.name !in referenced) file.delete()
-        }
+        OwnedFiles.prune(context, BUCKET, db.vehicleDocumentDao().getAllLocalFileNames().toHashSet())
     }
 
     /**
@@ -107,11 +93,4 @@ object DocumentStore {
             }
         }
 
-    private fun newFileName(context: Context, uri: Uri, displayName: String?): String {
-        val ext = displayName?.substringAfterLast('.', "")?.takeIf { it.isNotBlank() }
-            ?: MimeTypeMap.getSingleton()
-                .getExtensionFromMimeType(context.contentResolver.getType(uri))
-        val stem = UUID.randomUUID().toString().replace("-", "")
-        return if (ext.isNullOrBlank()) stem else "$stem.${ext.lowercase(Locale.US)}"
-    }
 }

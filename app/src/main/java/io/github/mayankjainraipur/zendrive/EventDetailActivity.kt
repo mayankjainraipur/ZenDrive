@@ -42,11 +42,180 @@ class EventDetailActivity : AppCompatActivity() {
                 false
             }
         }
+
+        setupAttachmentButtons()
+    }
+
+    // ─── Attachments ─────────────────────────────────────────────────────────
+
+    /** Where the camera writes; only copied into the owned bucket once a capture succeeds. */
+    private var pendingCaptureFile: java.io.File? = null
+
+    private val pickAttachmentLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri -> if (uri != null) attachFrom(uri, null) }
+
+    private val takePhotoLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.TakePicture()
+    ) { success ->
+        val file = pendingCaptureFile
+        pendingCaptureFile = null
+        if (success && file != null) {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this, "$packageName.fileprovider", file
+            )
+            attachFrom(uri, file.name)
+        } else {
+            // Cancelled or failed — don't leave the empty capture behind in the cache.
+            file?.delete()
+        }
     }
 
     override fun onResume() {
         super.onResume()
         loadEvent()
+        loadAttachments()
+    }
+
+    private fun setupAttachmentButtons() {
+        findViewById<com.google.android.material.button.MaterialButton>(R.id.btnPickPhoto)
+            .setOnClickListener {
+                pickAttachmentLauncher.launch(arrayOf("image/*", "application/pdf"))
+            }
+
+        findViewById<com.google.android.material.button.MaterialButton>(R.id.btnTakePhoto)
+            .setOnClickListener {
+                val dir = java.io.File(cacheDir, "captures").apply { mkdirs() }
+                val file = java.io.File(dir, "capture_${System.currentTimeMillis()}.jpg")
+                pendingCaptureFile = file
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    this, "$packageName.fileprovider", file
+                )
+                try {
+                    takePhotoLauncher.launch(uri)
+                } catch (_: Exception) {
+                    pendingCaptureFile = null
+                    file.delete()
+                    android.widget.Toast.makeText(
+                        this, R.string.attachment_no_camera, android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+    }
+
+    private fun attachFrom(uri: android.net.Uri, displayName: String?) {
+        val db = AppDatabase.getInstance(this)
+        lifecycleScope.launch {
+            try {
+                val stored = AttachmentStore.copyIn(this@EventDetailActivity, uri, displayName)
+                db.attachmentDao().insert(
+                    Attachment(
+                        ownerType = Attachment.OWNER_EVENT,
+                        ownerId = eventId,
+                        localFileName = stored,
+                        mimeType = contentResolver.getType(uri) ?: "image/jpeg"
+                    )
+                )
+                // The capture in cache has been copied into the owned bucket; drop the original.
+                pendingCaptureFile?.delete()
+                pendingCaptureFile = null
+                android.widget.Toast.makeText(
+                    this@EventDetailActivity, R.string.attachment_added,
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                loadAttachments()
+            } catch (_: Exception) {
+                android.widget.Toast.makeText(
+                    this@EventDetailActivity, R.string.attachment_failed,
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun loadAttachments() {
+        val container = findViewById<LinearLayout>(R.id.attachmentContainer) ?: return
+        val empty = findViewById<TextView>(R.id.tvNoAttachments)
+        val db = AppDatabase.getInstance(this)
+
+        lifecycleScope.launch {
+            val attachments = db.attachmentDao()
+                .getForOwner(Attachment.OWNER_EVENT, eventId)
+            container.removeAllViews()
+            empty.visibility = if (attachments.isEmpty()) View.VISIBLE else View.GONE
+
+            val sizePx = (88 * resources.displayMetrics.density).toInt()
+            for (attachment in attachments) {
+                val thumb = android.widget.ImageView(this@EventDetailActivity).apply {
+                    layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply {
+                        marginEnd = (8 * resources.displayMetrics.density).toInt()
+                    }
+                    scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                    setBackgroundResource(R.color.surface_light)
+                    contentDescription = getString(R.string.attachments)
+                }
+                container.addView(thumb)
+
+                // Decoding is IO plus a chunk of allocation; keep it off the main thread.
+                val bitmap = decodeThumbnail(
+                    AttachmentStore.fileFor(this@EventDetailActivity, attachment.localFileName),
+                    sizePx
+                )
+                if (bitmap != null) thumb.setImageBitmap(bitmap)
+
+                thumb.setOnClickListener {
+                    runCatching {
+                        startActivity(
+                            AttachmentStore.viewIntent(this@EventDetailActivity, attachment)
+                        )
+                    }
+                }
+                thumb.setOnLongClickListener {
+                    confirmDeleteAttachment(db, attachment)
+                    true
+                }
+            }
+        }
+    }
+
+    /** Samples down while decoding so a 12-megapixel photo never lands in memory whole. */
+    private suspend fun decodeThumbnail(file: java.io.File, targetPx: Int): android.graphics.Bitmap? =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            if (!file.exists()) return@withContext null
+            runCatching {
+                val bounds = android.graphics.BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+                android.graphics.BitmapFactory.decodeFile(file.absolutePath, bounds)
+                var sample = 1
+                while (bounds.outWidth / sample > targetPx * 2 &&
+                    bounds.outHeight / sample > targetPx * 2
+                ) {
+                    sample *= 2
+                }
+                android.graphics.BitmapFactory.decodeFile(
+                    file.absolutePath,
+                    android.graphics.BitmapFactory.Options().apply { inSampleSize = sample }
+                )
+            }.getOrNull()
+        }
+
+    private fun confirmDeleteAttachment(db: AppDatabase, attachment: Attachment) {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setMessage(R.string.attachment_delete_confirm)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.action_delete) { _, _ ->
+                lifecycleScope.launch {
+                    db.attachmentDao().delete(attachment)
+                    AttachmentStore.delete(this@EventDetailActivity, attachment.localFileName)
+                    android.widget.Toast.makeText(
+                        this@EventDetailActivity, R.string.attachment_deleted,
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    loadAttachments()
+                }
+            }
+            .show()
     }
 
     private fun loadEvent() {

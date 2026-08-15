@@ -248,10 +248,40 @@ class MigrationTest {
      * Structural validation alone would not catch an identity-hash mismatch — that only surfaces
      * when Room itself opens the database, which is exactly what happens on a user's device.
      */
+    /** The attachment table has no foreign key, so nothing else should be disturbed by adding it. */
+    @Test
+    fun migrate8To9_addsAttachmentTableWithoutTouchingExistingRows() {
+        helper.createDatabase(testDb, 8).apply {
+            execSQL(
+                """
+                INSERT INTO vehicle
+                  (id, name, vehicleNumber, type, fuelType, brand, model, year,
+                   purchaseDate, odometerReading, notes, isArchived, archivedAt,
+                   createdAt, updatedAt)
+                VALUES (1, 'Swift', 'CG04 AB 1234', 'car', 'petrol', 'Maruti', 'Swift', 2019,
+                        NULL, 42000.0, NULL, 0, NULL, 1700000000000, 1700000000000)
+                """.trimIndent()
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(testDb, 9, true, *AppDatabase.ALL_MIGRATIONS)
+
+        db.query("SELECT COUNT(*) FROM attachment").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(0, c.getInt(0))
+        }
+        db.query("SELECT name FROM vehicle WHERE id = 1").use { c ->
+            assertTrue("existing rows must be untouched", c.moveToFirst())
+            assertEquals("Swift", c.getString(0))
+        }
+        db.close()
+    }
+
     @Test
     fun migratedDatabaseOpensWithRoom() {
         helper.createDatabase(testDb, 4).close()
-        helper.runMigrationsAndValidate(testDb, 8, true, *AppDatabase.ALL_MIGRATIONS).close()
+        helper.runMigrationsAndValidate(testDb, 9, true, *AppDatabase.ALL_MIGRATIONS).close()
 
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val db = Room.databaseBuilder(context, AppDatabase::class.java, testDb)
