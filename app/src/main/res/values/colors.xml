@@ -1,45 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ═══ Material 3 dark scheme (teal/mint accent) ═══ -->
+    <!-- ═══ Material 3 light scheme (teal/mint accent) ═══ -->
+    <!-- Same token names as values-night/colors.xml — layouts and themes.xml are shared, so
+         every name defined here must also exist there, and vice versa. -->
 
-    <color name="md_primary">#80DBC4</color>
-    <color name="md_on_primary">#003830</color>
-    <color name="md_primary_container">#005045</color>
-    <color name="md_on_primary_container">#9EF7DF</color>
+    <color name="md_primary">#006B5B</color>
+    <color name="md_on_primary">#FFFFFF</color>
+    <color name="md_primary_container">#9EF7DF</color>
+    <color name="md_on_primary_container">#00201A</color>
 
-    <color name="md_secondary">#B2CCC3</color>
-    <color name="md_on_secondary">#1E352F</color>
-    <color name="md_secondary_container">#344C45</color>
-    <color name="md_on_secondary_container">#CEE9DF</color>
+    <color name="md_secondary">#4A635C</color>
+    <color name="md_on_secondary">#FFFFFF</color>
+    <color name="md_secondary_container">#CCE8DF</color>
+    <color name="md_on_secondary_container">#06201A</color>
 
-    <color name="md_tertiary">#A8CDDC</color>
-    <color name="md_on_tertiary">#0D3441</color>
+    <color name="md_tertiary">#3F6375</color>
+    <color name="md_on_tertiary">#FFFFFF</color>
 
-    <color name="md_error">#FFB4AB</color>
-    <color name="md_on_error">#690005</color>
+    <color name="md_error">#BA1A1A</color>
+    <color name="md_on_error">#FFFFFF</color>
 
-    <color name="md_background">#101418</color>
-    <color name="md_on_background">#E0E3E0</color>
+    <color name="md_background">#F5FAF7</color>
+    <color name="md_on_background">#171D1B</color>
 
-    <color name="md_surface">#101418</color>
-    <color name="md_on_surface">#E0E3E0</color>
-    <color name="md_surface_variant">#1E2A28</color>
-    <color name="md_on_surface_variant">#BFC9C4</color>
+    <color name="md_surface">#F5FAF7</color>
+    <color name="md_on_surface">#171D1B</color>
+    <color name="md_surface_variant">#E3EBE7</color>
+    <color name="md_on_surface_variant">#3F4945</color>
 
-    <color name="md_outline">#89938E</color>
-    <color name="md_outline_variant">#3F4946</color>
-    <color name="md_inverse_surface">#E0E3E0</color>
-    <color name="md_inverse_on_surface">#2D312F</color>
+    <color name="md_outline">#6F7975</color>
+    <color name="md_outline_variant">#C3CCC7</color>
+    <color name="md_inverse_surface">#2B3230</color>
+    <color name="md_inverse_on_surface">#ECF2EE</color>
 
     <!-- ═══ Legacy aliases (kept for existing layouts) ═══ -->
+    <!-- Note `primary` is the page ground, not the brand colour — layouts use it as the text
+         colour on accent-tinted buttons, which inverts correctly across both palettes. -->
 
     <color name="primary">@color/md_background</color>
-    <color name="primary_dark">#0A0E11</color>
+    <color name="primary_dark">#E7EEEA</color>
     <color name="primary_variant">@color/md_surface_variant</color>
 
     <color name="accent">@color/md_primary</color>
-    <color name="accent_dark">#5CB9A2</color>
-    <color name="accent_light">#B0F0D8</color>
+    <color name="accent_dark">#004F43</color>
+    <color name="accent_light">#3E8C7A</color>
 
     <color name="surface">@color/md_surface</color>
     <color name="surface_light">@color/md_surface_variant</color>
@@ -50,18 +54,19 @@
     <color name="text_secondary">@color/md_on_surface_variant</color>
     <color name="text_hint">@color/md_outline</color>
 
-    <color name="success">#80DBC4</color>
-    <color name="warning">#FFC857</color>
+    <color name="success">#116B52</color>
+    <color name="warning">#845400</color>
     <color name="error">@color/md_error</color>
-    <color name="info">#74B9FF</color>
+    <color name="info">#12559C</color>
 
     <color name="fab_bg">@color/md_primary</color>
     <color name="fab_icon">@color/md_on_primary</color>
 
     <color name="divider">@color/md_outline_variant</color>
-    <color name="ripple">#2280DBC4</color>
+    <color name="ripple">#22006B5B</color>
     <color name="status_bar">@color/md_surface</color>
     <color name="nav_bar">@color/md_surface</color>
 
+    <!-- Launcher icon background stays fixed; the icon does not follow app night mode. -->
     <color name="ic_launcher_adaptive_bg">#155E63</color>
 </resources>

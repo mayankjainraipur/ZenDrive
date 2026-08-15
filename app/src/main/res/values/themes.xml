@@ -4,6 +4,7 @@
         <!-- Status & Navigation bars -->
         <item name="android:statusBarColor">@color/md_surface</item>
         <item name="android:navigationBarColor">@color/md_surface</item>
+        <item name="android:windowLightStatusBar">@bool/window_light_status_bar</item>
 
         <!-- M3 color tokens -->
         <item name="colorPrimary">@color/md_primary</item>
