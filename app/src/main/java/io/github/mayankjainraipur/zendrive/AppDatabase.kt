@@ -105,9 +105,10 @@ data class EventMeta(
         Reminder::class,
         OdometerLog::class,
         Attachment::class,
+        ServiceSchedule::class,
         BackupRestoreLog::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -119,6 +120,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
     abstract fun odometerLogDao(): OdometerLogDao
     abstract fun attachmentDao(): AttachmentDao
+    abstract fun serviceScheduleDao(): ServiceScheduleDao
     abstract fun backupRestoreLogDao(): BackupRestoreLogDao
 
     companion object {
@@ -355,10 +357,37 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `service_schedule` (
+                      `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                      `vehicleId` INTEGER NOT NULL,
+                      `itemName` TEXT NOT NULL,
+                      `intervalKm` REAL,
+                      `intervalMonths` INTEGER,
+                      `lastDoneAt` INTEGER,
+                      `lastDoneOdometer` REAL,
+                      `isActive` INTEGER NOT NULL DEFAULT 1,
+                      `createdAt` INTEGER NOT NULL,
+                      `updatedAt` INTEGER NOT NULL,
+                      FOREIGN KEY(`vehicleId`) REFERENCES `vehicle`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_service_schedule_vehicleId` " +
+                        "ON `service_schedule` (`vehicleId`)"
+                )
+            }
+        }
+
         /** Single source of truth for the migration chain — the builder and the tests share it. */
         val ALL_MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
-            MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9
+            MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10
         )
 
         fun getInstance(context: android.content.Context): AppDatabase {

@@ -53,7 +53,7 @@ data class Reminder(
      * snoozing changes when you are told, not when the thing is actually due.
      */
     val notifyAt: Long? = null,
-    /** [SOURCE_MANUAL], [SOURCE_EVENT] or [SOURCE_DOCUMENT]. */
+    /** [SOURCE_MANUAL], [SOURCE_EVENT], [SOURCE_DOCUMENT] or [SOURCE_SCHEDULE]. */
     val sourceType: String = SOURCE_MANUAL,
     /** Id of the event or document this was generated from; null for manual reminders. */
     val sourceId: Int? = null,
@@ -66,5 +66,6 @@ data class Reminder(
         const val SOURCE_MANUAL = "manual"
         const val SOURCE_EVENT = "event"
         const val SOURCE_DOCUMENT = "document"
+        const val SOURCE_SCHEDULE = "schedule"
     }
 }

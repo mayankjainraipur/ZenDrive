@@ -51,6 +51,28 @@ object ReminderSync {
             )
         }
 
+        // Service schedules only become a date once there is something to project from: a time
+        // interval since it was last done, or a distance interval plus a usage rate.
+        val usageByVehicle = mutableMapOf<Int, OdometerSync.UsageStats>()
+        for (schedule in db.serviceScheduleDao().getAllActive()) {
+            val usage = usageByVehicle.getOrPut(schedule.vehicleId) {
+                OdometerSync.statsFor(db, schedule.vehicleId)
+            }
+            val dueAt = schedule.projectedDueDate(usage) ?: continue
+            alive += Reminder.SOURCE_SCHEDULE to schedule.id
+            upsert(
+                dao = reminderDao,
+                sourceType = Reminder.SOURCE_SCHEDULE,
+                sourceId = schedule.id,
+                vehicleId = schedule.vehicleId,
+                eventId = null,
+                title = schedule.itemName,
+                description = null,
+                reminderType = "service",
+                dueAt = dueAt
+            )
+        }
+
         // A source that lost its date, or was deleted outright, should take its reminder with it.
         // Manual reminders are never touched.
         for (orphan in reminderDao.getGenerated()) {

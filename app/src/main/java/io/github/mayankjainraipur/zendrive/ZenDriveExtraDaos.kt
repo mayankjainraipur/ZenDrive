@@ -157,6 +157,34 @@ interface AttachmentDao {
 }
 
 @Dao
+interface ServiceScheduleDao {
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(schedule: ServiceSchedule): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(schedules: List<ServiceSchedule>)
+
+    @Update
+    suspend fun update(schedule: ServiceSchedule)
+
+    @Delete
+    suspend fun delete(schedule: ServiceSchedule)
+
+    @Query("SELECT * FROM service_schedule WHERE vehicleId = :vehicleId ORDER BY itemName ASC")
+    suspend fun getForVehicle(vehicleId: Int): List<ServiceSchedule>
+
+    @Query("SELECT * FROM service_schedule WHERE id = :id")
+    suspend fun getById(id: Int): ServiceSchedule?
+
+    @Query("SELECT * FROM service_schedule WHERE isActive = 1")
+    suspend fun getAllActive(): List<ServiceSchedule>
+
+    @Query("SELECT COUNT(*) FROM service_schedule WHERE vehicleId = :vehicleId")
+    suspend fun countForVehicle(vehicleId: Int): Int
+}
+
+@Dao
 interface BackupRestoreLogDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

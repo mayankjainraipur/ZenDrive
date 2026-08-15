@@ -262,6 +262,18 @@
                     </LinearLayout>
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnServiceSchedule"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/service_schedule"
+                        android:textAllCaps="false"
+                        android:textColor="@color/accent"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="@color/card_stroke" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnLogOdometer"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"

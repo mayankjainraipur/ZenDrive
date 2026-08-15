@@ -197,6 +197,12 @@ class VehicleDetailActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        findViewById<MaterialButton>(R.id.btnServiceSchedule).setOnClickListener {
+            startActivity(
+                Intent(this, ServiceScheduleActivity::class.java).putExtra("vehicleId", vehicleId)
+            )
+        }
+
         findViewById<MaterialButton>(R.id.btnLogOdometer).setOnClickListener {
             showLogOdometerDialog(db)
         }

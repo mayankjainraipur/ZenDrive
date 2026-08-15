@@ -288,6 +288,34 @@
     <string name="reminder_overdue_days">Overdue by %1$d days</string>
     <string name="reminder_action_done">Mark done</string>
     <string name="reminder_action_snooze">Snooze a day</string>
+    <!-- ═══ Service schedule ═══ -->
+    <string name="service_schedule">Service schedule</string>
+    <string name="service_schedule_empty">No service items yet. Start from a template for this vehicle type, or add your own.</string>
+    <string name="service_schedule_use_template">Use a template</string>
+    <string name="service_schedule_add_item">Add item</string>
+    <string name="service_edit_item">Edit item</string>
+    <string name="service_item_name">Item (e.g. Engine oil)</string>
+    <string name="service_interval_distance">Every … %1$s</string>
+    <string name="service_interval_months">Every … months</string>
+    <string name="service_needs_an_interval">Set a distance or a month interval, otherwise this can never come due.</string>
+    <string name="service_every">Every %1$s</string>
+    <string name="service_no_interval">No interval set</string>
+    <string name="service_never_done">Not done yet — mark it done to start the clock</string>
+    <string name="service_overdue">Overdue</string>
+    <string name="service_due_in_both">In %1$s %2$s, or by %3$s</string>
+    <string name="service_due_in_distance">In %1$s %2$s</string>
+    <string name="service_due_on">Due by %1$s</string>
+    <string name="service_no_estimate">Not enough history to estimate</string>
+    <string name="service_mark_done">Mark done</string>
+    <string name="service_marked_done">Service recorded</string>
+    <string name="service_template_added">Added %1$d items</string>
+    <string name="service_delete_confirm">Remove \"%1$s\" from the schedule?</string>
+
+    <plurals name="months">
+        <item quantity="one">%d month</item>
+        <item quantity="other">%d months</item>
+    </plurals>
+
     <!-- ═══ Attachments ═══ -->
     <string name="attachments">Photos &amp; receipts</string>
     <string name="attachments_empty">Nothing attached yet.</string>
