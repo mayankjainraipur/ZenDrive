@@ -34,9 +34,15 @@ data class VehicleDocument(
     val fileName: String,
     val mimeType: String? = null,
     /**
-     * Local reference: content URI string or app-private path. Not validated here.
+     * The SAF URI the file was originally picked from. Kept for reference only — it may point at
+     * a file that has since moved or been deleted. Read [localFileName] instead.
      */
     val storageUri: String,
+    /**
+     * File name of this document's private copy inside [DocumentStore]. Null only for rows
+     * created before documents were copied in, and for those whose source URI was already dead.
+     */
+    val localFileName: String? = null,
     val fileSizeBytes: Long? = null,
     /** Optional expiry (e.g. insurance / PUC), epoch millis */
     val expiresAt: Long? = null,

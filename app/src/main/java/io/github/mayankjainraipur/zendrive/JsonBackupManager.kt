@@ -6,8 +6,21 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
+/**
+ * A backup is a zip: `backup.json` plus every attached document under `documents/`.
+ *
+ * Backups written before this change were bare JSON, so [importFromBytes] sniffs the format and
+ * still accepts them — those simply carry no files.
+ */
 object JsonBackupManager {
+
+    private const val ENTRY_JSON = "backup.json"
 
     private val json = Json {
         prettyPrint = true
@@ -44,7 +57,7 @@ object JsonBackupManager {
             }
 
             val bundle = BackupBundle(
-                schemaVersion = 3,
+                schemaVersion = 4,
                 appVersion = getAppVersion(context),
                 exportedAt = System.currentTimeMillis(),
                 profile = profile?.let { BackupProfile.fromEntity(it) },
@@ -58,11 +71,70 @@ object JsonBackupManager {
             json.encodeToString(BackupBundle.serializer(), bundle)
         }
 
+    /** Packs the bundle and every document copy into a single archive. */
+    suspend fun exportToBytes(db: AppDatabase, context: Context): ByteArray =
+        withContext(Dispatchers.IO) {
+            val jsonString = exportToJson(db, context)
+            val out = ByteArrayOutputStream()
+            ZipOutputStream(out).use { zip ->
+                zip.putNextEntry(ZipEntry(ENTRY_JSON))
+                zip.write(jsonString.toByteArray(Charsets.UTF_8))
+                zip.closeEntry()
+
+                for (name in db.vehicleDocumentDao().getAllLocalFileNames()) {
+                    val file = DocumentStore.fileFor(context, name)
+                    if (!file.exists()) continue
+                    zip.putNextEntry(ZipEntry(DocumentStore.ARCHIVE_PREFIX + name))
+                    file.inputStream().use { it.copyTo(zip) }
+                    zip.closeEntry()
+                }
+            }
+            out.toByteArray()
+        }
+
+    /** Accepts either the current archive or a legacy bare-JSON backup. */
+    suspend fun importFromBytes(db: AppDatabase, context: Context, bytes: ByteArray) =
+        withContext(Dispatchers.IO) {
+            try {
+                if (isZip(bytes)) {
+                    val jsonString = ZipInputStream(ByteArrayInputStream(bytes)).use { zip ->
+                        var found: String? = null
+                        while (true) {
+                            val entry = zip.nextEntry ?: break
+                            if (entry.name == ENTRY_JSON) {
+                                found = zip.readBytes().toString(Charsets.UTF_8)
+                            } else {
+                                // Written before the rows land; anything unclaimed is pruned below.
+                                DocumentStore.sanitizeArchiveEntry(entry.name)?.let { safeName ->
+                                    DocumentStore.writeRestored(context, safeName, zip.readBytes())
+                                }
+                            }
+                            zip.closeEntry()
+                        }
+                        found
+                    }
+                    importFromJson(
+                        db,
+                        jsonString ?: throw IllegalStateException("Backup archive has no $ENTRY_JSON")
+                    )
+                } else {
+                    importFromJson(db, bytes.toString(Charsets.UTF_8))
+                }
+            } finally {
+                // Clears both the documents the restore replaced and any files it failed to claim.
+                DocumentStore.pruneOrphans(context, db)
+            }
+        }
+
+    private fun isZip(bytes: ByteArray): Boolean =
+        bytes.size >= 4 && bytes[0] == 0x50.toByte() && bytes[1] == 0x4B.toByte() &&
+            bytes[2] == 0x03.toByte() && bytes[3] == 0x04.toByte()
+
     suspend fun importFromJson(db: AppDatabase, jsonString: String) =
         withContext(Dispatchers.IO) {
             val bundle = json.decodeFromString(BackupBundle.serializer(), jsonString)
 
-            require(bundle.schemaVersion in 1..3) {
+            require(bundle.schemaVersion in 1..4) {
                 "Unsupported backup schema version: ${bundle.schemaVersion}"
             }
 
@@ -135,8 +207,7 @@ object JsonBackupManager {
                 )
             )
             try {
-                val jsonString = exportToJson(db, context)
-                val bytes = jsonString.toByteArray(Charsets.UTF_8)
+                val bytes = exportToBytes(db, context)
 
                 context.contentResolver.openOutputStream(uri)?.use { out ->
                     out.write(bytes)
@@ -186,8 +257,7 @@ object JsonBackupManager {
                 val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                     ?: throw IllegalStateException("Cannot open input stream for URI")
 
-                val jsonString = bytes.toString(Charsets.UTF_8)
-                importFromJson(db, jsonString)
+                importFromBytes(db, context, bytes)
 
                 logDao.insert(
                     BackupRestoreLog(

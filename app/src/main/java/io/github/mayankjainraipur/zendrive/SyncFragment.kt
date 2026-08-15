@@ -53,7 +53,7 @@ class SyncFragment : Fragment() {
     private val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
 
     private val exportLauncher = registerForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
+        ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
         if (uri != null) {
             viewModel.exportBackup(requireContext().applicationContext, uri)
@@ -142,11 +142,12 @@ class SyncFragment : Fragment() {
     private fun setupListeners() {
         btnExportBackup.setOnClickListener {
             val timestamp = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-            exportLauncher.launch("zendrive_backup_$timestamp.json")
+            exportLauncher.launch("zendrive_backup_$timestamp.zip")
         }
 
         btnImportBackup.setOnClickListener {
-            importLauncher.launch(arrayOf("application/json", "*/*"))
+            // application/json stays listed so older backups are still pickable.
+            importLauncher.launch(arrayOf("application/zip", "application/json", "*/*"))
         }
 
         btnGoogleSignIn.setOnClickListener {

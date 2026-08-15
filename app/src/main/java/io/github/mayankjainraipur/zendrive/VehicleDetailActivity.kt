@@ -119,8 +119,15 @@ class VehicleDetailActivity : AppCompatActivity() {
                 .setMessage(getString(R.string.delete_vehicle_confirm, vehicle.name))
                 .setNegativeButton(android.R.string.cancel, null)
                 .setPositiveButton(R.string.action_delete) { _, _ ->
-                    viewModel.deleteVehicle(vehicle)
-                    finish()
+                    lifecycleScope.launch {
+                        // Room cascades the document rows away; their files are ours to clear.
+                        val docs = db.vehicleDocumentDao().getDocumentsForVehicle(vehicle.id)
+                        viewModel.deleteVehicle(vehicle)
+                        docs.forEach {
+                            DocumentStore.delete(this@VehicleDetailActivity, it.localFileName)
+                        }
+                        finish()
+                    }
                 }
                 .show()
         }
@@ -226,6 +233,7 @@ class VehicleDetailActivity : AppCompatActivity() {
             .setPositiveButton(R.string.action_delete) { _, _ ->
                 lifecycleScope.launch {
                     db.vehicleDocumentDao().delete(doc)
+                    DocumentStore.delete(this@VehicleDetailActivity, doc.localFileName)
                     Toast.makeText(this@VehicleDetailActivity, R.string.document_deleted, Toast.LENGTH_SHORT).show()
                     loadDocuments()
                 }

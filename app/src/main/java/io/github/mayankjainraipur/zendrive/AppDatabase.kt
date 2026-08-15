@@ -96,8 +96,8 @@ data class EventMeta(
         Reminder::class,
         BackupRestoreLog::class
     ],
-    version = 4,
-    exportSchema = false
+    version = 5,
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun vehicleDao(): VehicleDao
@@ -231,6 +231,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `vehicle_documents` ADD COLUMN `localFileName` TEXT")
+            }
+        }
+
         fun getInstance(context: android.content.Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = androidx.room.Room.databaseBuilder(
@@ -238,8 +244,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "zendrive_db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
                 INSTANCE = instance
                 instance

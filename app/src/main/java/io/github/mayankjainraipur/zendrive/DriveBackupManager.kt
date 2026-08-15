@@ -25,7 +25,7 @@ data class DriveBackupInfo(
 
 object DriveBackupManager {
 
-    private const val BACKUP_MIME_TYPE = "application/json"
+    private const val BACKUP_MIME_TYPE = "application/zip"
     private const val BACKUP_FILE_PREFIX = "zendrive_backup_"
     private val DRIVE_SCOPE = Scope(DriveScopes.DRIVE_APPDATA)
 
@@ -80,13 +80,12 @@ object DriveBackupManager {
             )
 
             try {
-                val jsonString = JsonBackupManager.exportToJson(db, context)
-                val bytes = jsonString.toByteArray(Charsets.UTF_8)
+                val bytes = JsonBackupManager.exportToBytes(db, context)
 
                 val driveService = buildDriveService(credential)
                 val timestamp = System.currentTimeMillis()
                 val fileMetadata = com.google.api.services.drive.model.File().apply {
-                    name = "${BACKUP_FILE_PREFIX}${timestamp}.json"
+                    name = "${BACKUP_FILE_PREFIX}${timestamp}.zip"
                     parents = listOf("appDataFolder")
                 }
 
@@ -182,9 +181,8 @@ object DriveBackupManager {
                 val outputStream = ByteArrayOutputStream()
                 driveService.files().get(fileId).executeMediaAndDownloadTo(outputStream)
                 val bytes = outputStream.toByteArray()
-                val jsonString = bytes.toString(Charsets.UTF_8)
 
-                JsonBackupManager.importFromJson(db, jsonString)
+                JsonBackupManager.importFromBytes(db, context, bytes)
 
                 val now = System.currentTimeMillis()
                 logDao.insert(

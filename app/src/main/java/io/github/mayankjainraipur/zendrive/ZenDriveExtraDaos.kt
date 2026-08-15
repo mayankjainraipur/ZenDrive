@@ -39,6 +39,12 @@ interface VehicleDocumentDao {
     @Query("SELECT * FROM vehicle_documents WHERE id = :id")
     suspend fun getById(id: Int): VehicleDocument?
 
+    @Query("SELECT localFileName FROM vehicle_documents WHERE localFileName IS NOT NULL")
+    suspend fun getAllLocalFileNames(): List<String>
+
+    @Query("SELECT * FROM vehicle_documents WHERE localFileName IS NULL")
+    suspend fun getDocumentsMissingLocalCopy(): List<VehicleDocument>
+
     @Query("DELETE FROM vehicle_documents WHERE vehicleId = :vehicleId")
     suspend fun deleteAllForVehicle(vehicleId: Int)
 }

@@ -20,6 +20,14 @@ class ZenDriveApp : Application() {
         createNotificationChannels()
         ReminderScheduler.schedule(this)
         scheduleAutoBackupIfEnabled()
+        adoptLegacyDocuments()
+    }
+
+    /** Rescues documents saved before files were copied in, while their URIs still resolve. */
+    private fun adoptLegacyDocuments() {
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            runCatching { DocumentStore.adoptLegacyDocuments(this@ZenDriveApp, database) }
+        }
     }
 
     private fun scheduleAutoBackupIfEnabled() {

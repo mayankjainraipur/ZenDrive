@@ -1,7 +1,5 @@
 package io.github.mayankjainraipur.zendrive
 
-import android.content.Intent
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -77,11 +75,7 @@ class DocumentAdapter : ListAdapter<VehicleDocument, DocumentAdapter.VH>(DIFF) {
             if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
             val item = getItem(pos)
             try {
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(Uri.parse(item.storageUri), item.mimeType ?: "*/*")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                ctx.startActivity(intent)
+                ctx.startActivity(DocumentStore.viewIntent(ctx, item))
             } catch (_: Exception) {
                 Toast.makeText(ctx, R.string.cannot_open_file, Toast.LENGTH_SHORT).show()
             }
