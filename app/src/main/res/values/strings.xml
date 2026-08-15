@@ -280,6 +280,15 @@
         <item>1 month before</item>
     </string-array>
 
+    <!-- ═══ Reminder notifications ═══ -->
+    <string name="reminder_due_today">Due today</string>
+    <string name="reminder_due_tomorrow">Due tomorrow</string>
+    <string name="reminder_due_in_days">Due in %1$d days</string>
+    <string name="reminder_overdue_yesterday">Overdue since yesterday</string>
+    <string name="reminder_overdue_days">Overdue by %1$d days</string>
+    <string name="reminder_action_done">Mark done</string>
+    <string name="reminder_action_snooze">Snooze a day</string>
+
     <string name="clear_expiry">Clear</string>
 
     <string-array name="document_types">

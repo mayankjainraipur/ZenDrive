@@ -33,6 +33,10 @@
             android:name=".AppLockActivity"
             android:theme="@style/Theme.ZenDrive" />
 
+        <receiver
+            android:name=".ReminderActionReceiver"
+            android:exported="false" />
+
         <!-- Hands a viewer app read access to one document copy, for one intent only. -->
         <provider
             android:name="androidx.core.content.FileProvider"
