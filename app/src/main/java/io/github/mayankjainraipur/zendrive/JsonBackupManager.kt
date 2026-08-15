@@ -45,6 +45,7 @@ object JsonBackupManager {
             val allMeta = mutableListOf<EventMeta>()
             val allReminders = mutableListOf<Reminder>()
             val allDocuments = mutableListOf<VehicleDocument>()
+            val allOdometerLogs = mutableListOf<OdometerLog>()
 
             for (v in vehicles) {
                 val events = db.vehicleEventDao().getEventsForVehicle(v.id)
@@ -60,10 +61,15 @@ object JsonBackupManager {
                     db.reminderDao().getRemindersForVehicle(v.id).filterNot { it.isGenerated }
                 )
                 allDocuments.addAll(db.vehicleDocumentDao().getDocumentsForVehicle(v.id))
+                // Same reasoning as reminders: event-derived readings are rebuilt from the events
+                // in this bundle, so carrying them would duplicate every one.
+                allOdometerLogs.addAll(
+                    db.odometerLogDao().getForVehicle(v.id).filterNot { it.isDerived }
+                )
             }
 
             val bundle = BackupBundle(
-                schemaVersion = 5,
+                schemaVersion = 6,
                 appVersion = getAppVersion(context),
                 exportedAt = System.currentTimeMillis(),
                 profile = profile?.let { BackupProfile.fromEntity(it) },
@@ -71,7 +77,8 @@ object JsonBackupManager {
                 events = allEvents.map { BackupEvent.fromEntity(it) },
                 eventMeta = allMeta.map { BackupEventMeta.fromEntity(it) },
                 reminders = allReminders.map { BackupReminder.fromEntity(it) },
-                documents = allDocuments.map { BackupDocument.fromEntity(it) }
+                documents = allDocuments.map { BackupDocument.fromEntity(it) },
+                odometerLogs = allOdometerLogs.map { BackupOdometerLog.fromEntity(it) }
             )
 
             json.encodeToString(BackupBundle.serializer(), bundle)
@@ -126,6 +133,10 @@ object JsonBackupManager {
                 } else {
                     importFromJson(db, bytes.toString(Charsets.UTF_8))
                 }
+                // Derived rows are deliberately absent from the bundle; rebuild them from the
+                // events and documents that just landed, rather than waiting for the daily worker.
+                ReminderSync.reconcile(db)
+                OdometerSync.reconcile(db)
             } finally {
                 // Clears both the documents the restore replaced and any files it failed to claim.
                 DocumentStore.pruneOrphans(context, db)
@@ -140,7 +151,7 @@ object JsonBackupManager {
         withContext(Dispatchers.IO) {
             val bundle = json.decodeFromString(BackupBundle.serializer(), jsonString)
 
-            require(bundle.schemaVersion in 1..5) {
+            require(bundle.schemaVersion in 1..6) {
                 "Unsupported backup schema version: ${bundle.schemaVersion}"
             }
 
@@ -150,6 +161,7 @@ object JsonBackupManager {
                 val metaDao = db.eventMetaDao()
                 val reminderDao = db.reminderDao()
                 val documentDao = db.vehicleDocumentDao()
+                val odometerDao = db.odometerLogDao()
                 val profileDao = db.userProfileDao()
 
                 val existingVehicles = vehicleDao.getAllVehicles()
@@ -157,6 +169,7 @@ object JsonBackupManager {
                     eventDao.deleteAllEventsForVehicle(v.id)
                     reminderDao.deleteAllForVehicle(v.id)
                     documentDao.deleteAllForVehicle(v.id)
+                    odometerDao.deleteAllForVehicle(v.id)
                     vehicleDao.deleteVehicle(v)
                 }
 
@@ -189,6 +202,11 @@ object JsonBackupManager {
                 for (bd in bundle.documents) {
                     val newVehicleId = vehicleIdMap[bd.vehicleOriginalId] ?: continue
                     documentDao.insert(bd.toEntity(newVehicleId))
+                }
+
+                for (bo in bundle.odometerLogs) {
+                    val newVehicleId = vehicleIdMap[bo.vehicleOriginalId] ?: continue
+                    odometerDao.insert(bo.toEntity(newVehicleId))
                 }
 
                 bundle.profile?.let { bp ->

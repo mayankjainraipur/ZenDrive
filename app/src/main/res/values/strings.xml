@@ -288,6 +288,15 @@
     <string name="reminder_overdue_days">Overdue by %1$d days</string>
     <string name="reminder_action_done">Mark done</string>
     <string name="reminder_action_snooze">Snooze a day</string>
+    <!-- ═══ Odometer ═══ -->
+    <string name="odometer_log_reading">Log odometer reading</string>
+    <string name="odometer_current_reading">Current reading</string>
+    <string name="odometer_usage_rate">~%1$s %2$s/day</string>
+    <string name="odometer_saved">Odometer reading saved</string>
+    <string name="odometer_must_be_positive">Enter a reading greater than zero</string>
+    <string name="odometer_below_current">That is lower than the current reading of %1$s. Save it anyway?</string>
+    <string name="save_anyway">Save anyway</string>
+
     <!-- ═══ Fuel ═══ -->
     <string name="fuel_volume">Volume (L)</string>
     <string name="fuel_price_per_unit">Price per L</string>

@@ -2,6 +2,7 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/primary">
@@ -247,8 +248,30 @@
                                 android:layout_height="wrap_content"
                                 android:textColor="@color/text_primary"
                                 android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/tvUsageRate"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textColor="@color/accent"
+                                android:textSize="12sp"
+                                android:visibility="gone"
+                                tools:text="~42 km/day" />
                         </LinearLayout>
                     </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnLogOdometer"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/odometer_log_reading"
+                        android:textAllCaps="false"
+                        android:textColor="@color/accent"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="@color/card_stroke" />
 
                     <!-- Notes (optional) -->
                     <TextView

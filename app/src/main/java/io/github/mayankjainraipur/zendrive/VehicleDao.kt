@@ -88,6 +88,9 @@ interface VehicleEventDao {
     @Query("SELECT * FROM vehicle_event WHERE nextDueDate IS NOT NULL")
     suspend fun getEventsWithNextDue(): List<VehicleEvent>
 
+    @Query("SELECT * FROM vehicle_event WHERE odometer IS NOT NULL AND odometer > 0")
+    suspend fun getAllEventsWithOdometer(): List<VehicleEvent>
+
     @Query("DELETE FROM vehicle_event WHERE vehicleId = :vehicleId")
     suspend fun deleteAllEventsForVehicle(vehicleId: Int)
 

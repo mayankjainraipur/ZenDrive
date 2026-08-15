@@ -103,9 +103,10 @@ data class EventMeta(
         UserProfile::class,
         VehicleDocument::class,
         Reminder::class,
+        OdometerLog::class,
         BackupRestoreLog::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -115,6 +116,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userProfileDao(): UserProfileDao
     abstract fun vehicleDocumentDao(): VehicleDocumentDao
     abstract fun reminderDao(): ReminderDao
+    abstract fun odometerLogDao(): OdometerLogDao
     abstract fun backupRestoreLogDao(): BackupRestoreLogDao
 
     companion object {
@@ -283,10 +285,54 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `odometer_log` (
+                      `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                      `vehicleId` INTEGER NOT NULL,
+                      `reading` REAL NOT NULL,
+                      `recordedAt` INTEGER NOT NULL,
+                      `source` TEXT NOT NULL,
+                      `eventId` INTEGER,
+                      `note` TEXT,
+                      `createdAt` INTEGER NOT NULL,
+                      FOREIGN KEY(`vehicleId`) REFERENCES `vehicle`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_odometer_log_vehicleId` " +
+                        "ON `odometer_log` (`vehicleId`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_odometer_log_vehicleId_recordedAt` " +
+                        "ON `odometer_log` (`vehicleId`, `recordedAt`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_odometer_log_source_eventId` " +
+                        "ON `odometer_log` (`source`, `eventId`)"
+                )
+                // Events have been carrying odometer readings all along. Seeding from them means
+                // a usage rate exists immediately instead of starting from nothing.
+                db.execSQL(
+                    """
+                    INSERT INTO `odometer_log`
+                      (`vehicleId`, `reading`, `recordedAt`, `source`, `eventId`, `createdAt`)
+                    SELECT `vehicleId`, `odometer`, `date`, 'event', `id`, `createdAt`
+                    FROM `vehicle_event`
+                    WHERE `odometer` IS NOT NULL AND `odometer` > 0
+                    """.trimIndent()
+                )
+            }
+        }
+
         /** Single source of truth for the migration chain — the builder and the tests share it. */
         val ALL_MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
-            MIGRATION_6_7
+            MIGRATION_6_7, MIGRATION_7_8
         )
 
         fun getInstance(context: android.content.Context): AppDatabase {

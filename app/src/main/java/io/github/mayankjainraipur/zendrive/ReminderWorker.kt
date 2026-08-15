@@ -24,6 +24,7 @@ class ReminderWorker(
         // Pick up due dates and document expiries added since the last run — including any that
         // arrived via a restore rather than through the UI.
         ReminderSync.reconcile(db)
+        OdometerSync.reconcile(db)
 
         // Warn ahead of the due date — a reminder that first speaks on the day it expires is
         // just a record of being late.

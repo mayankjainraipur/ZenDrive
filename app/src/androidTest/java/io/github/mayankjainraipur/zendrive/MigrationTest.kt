@@ -191,13 +191,67 @@ class MigrationTest {
     }
 
     /**
+     * The odometer log is seeded from readings events were already carrying, so a usage rate
+     * exists immediately on upgrade rather than starting from nothing.
+     */
+    @Test
+    fun migrate7To8_backfillsOdometerLogFromEvents() {
+        helper.createDatabase(testDb, 7).apply {
+            execSQL(
+                """
+                INSERT INTO vehicle
+                  (id, name, vehicleNumber, type, fuelType, brand, model, year,
+                   purchaseDate, odometerReading, notes, isArchived, archivedAt,
+                   createdAt, updatedAt)
+                VALUES (1, 'Swift', 'CG04 AB 1234', 'car', 'petrol', 'Maruti', 'Swift', 2019,
+                        NULL, 43000.0, NULL, 0, NULL, 1700000000000, 1700000000000)
+                """.trimIndent()
+            )
+            // Two readings to seed, and one event with no odometer that must be skipped.
+            execSQL(
+                """
+                INSERT INTO vehicle_event
+                  (id, vehicleId, eventType, title, description, date, odometer, cost,
+                   fuelVolume, pricePerUnit, isFullTank, nextDueDate, createdAt)
+                VALUES
+                  (1, 1, 'fuel', 'Petrol', NULL, 1700000000000, 42000.0, 2000.0,
+                   35.0, 57.0, 1, NULL, 1700000000000),
+                  (2, 1, 'fuel', 'Petrol', NULL, 1702000000000, 43000.0, 2100.0,
+                   36.0, 58.0, 1, NULL, 1702000000000),
+                  (3, 1, 'tax', 'Road tax', NULL, 1701000000000, NULL, 5000.0,
+                   NULL, NULL, 0, NULL, 1701000000000)
+                """.trimIndent()
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(testDb, 8, true, *AppDatabase.ALL_MIGRATIONS)
+
+        db.query("SELECT COUNT(*) FROM odometer_log").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("only events carrying a reading should seed the log", 2, c.getInt(0))
+        }
+        db.query(
+            "SELECT reading, recordedAt, source, eventId FROM odometer_log ORDER BY reading ASC"
+        ).use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(42000.0, c.getDouble(0), 0.001)
+            assertEquals("reading must be dated by the event, not the migration run",
+                1700000000000L, c.getLong(1))
+            assertEquals("event", c.getString(2))
+            assertEquals(1, c.getInt(3))
+        }
+        db.close()
+    }
+
+    /**
      * Structural validation alone would not catch an identity-hash mismatch — that only surfaces
      * when Room itself opens the database, which is exactly what happens on a user's device.
      */
     @Test
     fun migratedDatabaseOpensWithRoom() {
         helper.createDatabase(testDb, 4).close()
-        helper.runMigrationsAndValidate(testDb, 7, true, *AppDatabase.ALL_MIGRATIONS).close()
+        helper.runMigrationsAndValidate(testDb, 8, true, *AppDatabase.ALL_MIGRATIONS).close()
 
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val db = Room.databaseBuilder(context, AppDatabase::class.java, testDb)

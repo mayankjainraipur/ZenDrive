@@ -12,8 +12,40 @@ data class BackupBundle(
     val events: List<BackupEvent>,
     val eventMeta: List<BackupEventMeta>,
     val reminders: List<BackupReminder>,
-    val documents: List<BackupDocument>
+    val documents: List<BackupDocument>,
+    /** Hand-entered readings only; event-derived ones are rebuilt by OdometerSync on restore. */
+    val odometerLogs: List<BackupOdometerLog> = emptyList()
 )
+
+@Serializable
+data class BackupOdometerLog(
+    val vehicleOriginalId: Int,
+    val reading: Double,
+    val recordedAt: Long,
+    val note: String? = null,
+    val createdAt: Long
+) {
+    fun toEntity(newVehicleId: Int): OdometerLog = OdometerLog(
+        id = 0,
+        vehicleId = newVehicleId,
+        reading = reading,
+        recordedAt = recordedAt,
+        source = OdometerLog.SOURCE_MANUAL,
+        eventId = null,
+        note = note,
+        createdAt = createdAt
+    )
+
+    companion object {
+        fun fromEntity(e: OdometerLog) = BackupOdometerLog(
+            vehicleOriginalId = e.vehicleId,
+            reading = e.reading,
+            recordedAt = e.recordedAt,
+            note = e.note,
+            createdAt = e.createdAt
+        )
+    }
+}
 
 @Serializable
 data class BackupProfile(

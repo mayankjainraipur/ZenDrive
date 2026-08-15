@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -145,7 +146,8 @@ class VehicleDetailActivity : AppCompatActivity() {
                     tvType.text = vehicle.type.replaceFirstChar { it.uppercase() }
                     tvFuel.text = vehicle.fuelType.replaceFirstChar { it.uppercase() }
                     tvYear.text = vehicle.year.toString()
-                    tvOdometer.text = "${String.format(java.util.Locale.getDefault(), "%,.0f", vehicle.odometerReading)} km"
+                    tvOdometer.text = FormatUtil.formatDistance(vehicle.odometerReading)
+                    loadUsageRate()
 
                     tvIcon.text = when (vehicle.type.lowercase()) {
                         "car" -> "🚗"
@@ -192,6 +194,10 @@ class VehicleDetailActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        findViewById<MaterialButton>(R.id.btnLogOdometer).setOnClickListener {
+            showLogOdometerDialog(db)
+        }
+
         btnAddDocument.setOnClickListener {
             startActivity(
                 Intent(this, AddDocumentActivity::class.java)
@@ -222,6 +228,78 @@ class VehicleDetailActivity : AppCompatActivity() {
                 tvEmptyDocuments.visibility = View.GONE
                 recyclerDocuments.visibility = View.VISIBLE
             }
+        }
+    }
+
+    private fun loadUsageRate() {
+        val tvUsageRate = findViewById<TextView>(R.id.tvUsageRate)
+        lifecycleScope.launch {
+            val stats = OdometerSync.statsFor(AppDatabase.getInstance(this@VehicleDetailActivity), vehicleId)
+            val perDay = stats.perDay
+            if (perDay == null) {
+                tvUsageRate.visibility = View.GONE
+            } else {
+                tvUsageRate.visibility = View.VISIBLE
+                tvUsageRate.text = getString(
+                    R.string.odometer_usage_rate,
+                    String.format(java.util.Locale.getDefault(), "%,.0f", perDay),
+                    UserPrefs.distanceUnit
+                )
+            }
+        }
+    }
+
+    /** Records a reading by hand, for the stretches between events. */
+    private fun showLogOdometerDialog(db: AppDatabase) {
+        val vehicle = boundVehicle ?: return
+        val input = com.google.android.material.textfield.TextInputEditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            hint = getString(R.string.odometer_current_reading)
+            setText(String.format(java.util.Locale.getDefault(), "%.0f", vehicle.odometerReading))
+        }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 24, 48, 0)
+            addView(input)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.odometer_log_reading)
+            .setView(container)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val reading = input.text?.toString()?.toDoubleOrNull()
+                if (reading == null || reading <= 0) {
+                    Toast.makeText(this, R.string.odometer_must_be_positive, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                // Odometers do not run backwards, so a lower number is usually a typo — but it is
+                // a legitimate correction often enough that it should not simply be refused.
+                if (reading < vehicle.odometerReading) {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle(R.string.odometer_log_reading)
+                        .setMessage(
+                            getString(
+                                R.string.odometer_below_current,
+                                FormatUtil.formatDistance(vehicle.odometerReading)
+                            )
+                        )
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .setPositiveButton(R.string.save_anyway) { _, _ -> saveOdometer(db, reading) }
+                        .show()
+                } else {
+                    saveOdometer(db, reading)
+                }
+            }
+            .show()
+    }
+
+    private fun saveOdometer(db: AppDatabase, reading: Double) {
+        lifecycleScope.launch {
+            OdometerSync.recordManualReading(db, vehicleId, reading)
+            Toast.makeText(this@VehicleDetailActivity, R.string.odometer_saved, Toast.LENGTH_SHORT).show()
+            loadUsageRate()
         }
     }
 

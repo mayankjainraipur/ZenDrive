@@ -263,6 +263,8 @@ class AddEventActivity : AppCompatActivity() {
             // Derives the reminder from nextDueDate on both paths, so editing a due date moves
             // the reminder and clearing one removes it.
             ReminderSync.reconcile(db)
+            // Same for the odometer reading this event carries.
+            OdometerSync.reconcile(db)
             finish()
         }
     }
