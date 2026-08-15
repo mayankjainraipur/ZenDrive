@@ -22,7 +22,8 @@ import java.util.Locale
 
 class AddDocumentActivity : AppCompatActivity() {
 
-    private var vehicleId: Int = -1
+    /** Sentinel for a document that belongs to the owner rather than any vehicle. */
+    private var vehicleId: Int = PERSONAL
     private var editingDocId: Int = -1
 
     /** Copy taken at pick time, not yet referenced by any row. */
@@ -112,7 +113,7 @@ class AddDocumentActivity : AppCompatActivity() {
                     finish()
                     return@launch
                 }
-                vehicleId = doc.vehicleId
+                vehicleId = doc.vehicleId ?: PERSONAL
                 existingLocalFileName = doc.localFileName
                 originalUriString = doc.storageUri
                 selectedFileName = doc.fileName
@@ -144,11 +145,7 @@ class AddDocumentActivity : AppCompatActivity() {
                 btnSaveDocument.isEnabled = true
             }
         } else {
-            vehicleId = intent.getIntExtra("vehicleId", -1)
-            if (vehicleId == -1) {
-                finish()
-                return
-            }
+            vehicleId = intent.getIntExtra("vehicleId", PERSONAL)
             toolbar.title = getString(R.string.add_document)
             restoreStagedFile(savedInstanceState)
             lifecycleScope.launch {
@@ -264,9 +261,9 @@ class AddDocumentActivity : AppCompatActivity() {
             return
         }
 
-        if (vehicleId == -1) return
-
         val now = System.currentTimeMillis()
+        // PERSONAL is stored as null: the row belongs to the owner, not a vehicle.
+        val ownerVehicleId = vehicleId.takeIf { it != PERSONAL }
 
         lifecycleScope.launch {
             if (editingDocId != -1) {
@@ -292,7 +289,7 @@ class AddDocumentActivity : AppCompatActivity() {
                 Toast.makeText(this@AddDocumentActivity, R.string.document_updated, Toast.LENGTH_SHORT).show()
             } else {
                 val doc = VehicleDocument(
-                    vehicleId = vehicleId,
+                    vehicleId = ownerVehicleId,
                     title = title,
                     documentType = docType.lowercase(Locale.getDefault()),
                     fileName = selectedFileName ?: "",
@@ -316,6 +313,9 @@ class AddDocumentActivity : AppCompatActivity() {
     }
 
     companion object {
+        /** Passed as the vehicleId extra to create a document with no vehicle. */
+        const val PERSONAL = -1
+
         private const val KEY_STAGED = "stagedLocalFileName"
         private const val KEY_EXISTING = "existingLocalFileName"
         private const val KEY_ORIGINAL_URI = "originalUriString"

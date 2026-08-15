@@ -21,6 +21,7 @@ class AddVehicleActivity : AppCompatActivity() {
 
     private lateinit var viewModel: LogViewModel
     private var purchaseDateMillis: Long? = null
+    private var warrantyExpiresAtMillis: Long? = null
     private var editVehicleId: Int = -1
     private val dateFormat get() = SimpleDateFormat(UserPrefs.dateFormatPattern, Locale.getDefault())
 
@@ -61,7 +62,17 @@ class AddVehicleActivity : AppCompatActivity() {
         actvFuelType.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, fuelTypes))
 
         // Date picker
-        etPurchaseDate.setOnClickListener { showDatePicker(etPurchaseDate) }
+        val etWarrantyExpiry = findViewById<TextInputEditText>(R.id.etWarrantyExpiry)
+        etPurchaseDate.setOnClickListener {
+            showDatePicker(etPurchaseDate, purchaseDateMillis) { picked ->
+                purchaseDateMillis = picked
+            }
+        }
+        etWarrantyExpiry.setOnClickListener {
+            showDatePicker(etWarrantyExpiry, warrantyExpiresAtMillis) { picked ->
+                warrantyExpiresAtMillis = picked
+            }
+        }
 
         editVehicleId = intent.getIntExtra("vehicleId", -1)
         if (editVehicleId != -1) {
@@ -136,6 +147,7 @@ class AddVehicleActivity : AppCompatActivity() {
                 model = model,
                 year = year!!,
                 purchaseDate = purchaseDateMillis,
+                warrantyExpiresAt = warrantyExpiresAtMillis,
                 notes = notes.ifEmpty { null }
             )
 
@@ -149,15 +161,18 @@ class AddVehicleActivity : AppCompatActivity() {
         }
     }
 
-    private fun showDatePicker(target: TextInputEditText) {
+    private fun showDatePicker(
+        target: TextInputEditText,
+        current: Long?,
+        onPicked: (Long) -> Unit
+    ) {
         val picker = MaterialDatePicker.Builder.datePicker()
-            .setTitleText(getString(R.string.purchase_date))
-            .setSelection(purchaseDateMillis ?: MaterialDatePicker.todayInUtcMilliseconds())
+            .setSelection(current ?: MaterialDatePicker.todayInUtcMilliseconds())
             .build()
         picker.addOnPositiveButtonClickListener { selection ->
-            purchaseDateMillis = selection
+            onPicked(selection)
             target.setText(dateFormat.format(selection))
         }
-        picker.show(supportFragmentManager, "purchase_date_picker")
+        picker.show(supportFragmentManager, "date_picker")
     }
 }

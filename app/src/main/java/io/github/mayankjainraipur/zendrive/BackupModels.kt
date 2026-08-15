@@ -318,7 +318,8 @@ data class BackupReminder(
 
 @Serializable
 data class BackupDocument(
-    val vehicleOriginalId: Int,
+    /** Null for a personal document, which belongs to the owner rather than a vehicle. */
+    val vehicleOriginalId: Int? = null,
     val title: String,
     val documentType: String,
     val fileName: String,
@@ -332,7 +333,7 @@ data class BackupDocument(
     val createdAt: Long,
     val updatedAt: Long
 ) {
-    fun toEntity(newVehicleId: Int): VehicleDocument = VehicleDocument(
+    fun toEntity(newVehicleId: Int?): VehicleDocument = VehicleDocument(
         id = 0,
         vehicleId = newVehicleId,
         title = title,

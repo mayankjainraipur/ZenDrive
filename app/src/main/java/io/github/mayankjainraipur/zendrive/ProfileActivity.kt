@@ -83,6 +83,13 @@ class ProfileActivity : AppCompatActivity() {
 
         switchAppLock = findViewById(R.id.switchAppLock)
 
+        findViewById<MaterialButton>(R.id.btnAddPersonalDoc).setOnClickListener {
+            startActivity(
+                android.content.Intent(this, AddDocumentActivity::class.java)
+                    .putExtra("vehicleId", AddDocumentActivity.PERSONAL)
+            )
+        }
+
         actvTheme = findViewById(R.id.actvTheme)
         actvDistanceUnit = findViewById(R.id.actvDistanceUnit)
         actvDateFormat = findViewById(R.id.actvDateFormat)
@@ -107,6 +114,51 @@ class ProfileActivity : AppCompatActivity() {
                         onAppLockToggled(isChecked)
                     }
                 }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadPersonalDocuments()
+    }
+
+    /** Documents with no vehicle: a licence belongs to the owner and outlives any one vehicle. */
+    private fun loadPersonalDocuments() {
+        val container = findViewById<View>(R.id.personalDocsContainer) as android.widget.LinearLayout
+        val empty = findViewById<TextView>(R.id.tvNoPersonalDocs)
+        lifecycleScope.launch {
+            val documents = db.vehicleDocumentDao().getPersonalDocuments()
+            container.removeAllViews()
+            empty.visibility = if (documents.isEmpty()) View.VISIBLE else View.GONE
+
+            for (document in documents) {
+                val row = android.widget.LinearLayout(this@ProfileActivity).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    setPadding(0, 16, 0, 16)
+                    isClickable = true
+                    setOnClickListener {
+                        runCatching {
+                            startActivity(DocumentStore.viewIntent(this@ProfileActivity, document))
+                        }
+                    }
+                }
+                row.addView(
+                    TextView(this@ProfileActivity).apply {
+                        text = document.title
+                        setTextColor(getColor(R.color.text_primary))
+                        textSize = 15f
+                    }
+                )
+                val expiry = document.expiresAt?.let { FormatUtil.formatDate(it) }
+                row.addView(
+                    TextView(this@ProfileActivity).apply {
+                        text = listOfNotNull(document.documentType, expiry).joinToString(" · ")
+                        setTextColor(getColor(R.color.text_hint))
+                        textSize = 12f
+                    }
+                )
+                container.addView(row)
             }
         }
     }

@@ -220,7 +220,13 @@ object JsonBackupManager {
                 }
 
                 for (bd in bundle.documents) {
-                    val newVehicleId = vehicleIdMap[bd.vehicleOriginalId] ?: continue
+                    // A personal document has no vehicle to remap, so it restores as-is. Only a
+                    // document that names a vehicle we failed to remap is skipped.
+                    val newVehicleId = if (bd.vehicleOriginalId == null) {
+                        null
+                    } else {
+                        vehicleIdMap[bd.vehicleOriginalId] ?: continue
+                    }
                     documentDao.insert(bd.toEntity(newVehicleId))
                 }
 

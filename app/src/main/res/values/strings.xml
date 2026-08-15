@@ -288,6 +288,15 @@
     <string name="reminder_overdue_days">Overdue by %1$d days</string>
     <string name="reminder_action_done">Mark done</string>
     <string name="reminder_action_snooze">Snooze a day</string>
+    <!-- ═══ Warranty &amp; personal documents ═══ -->
+    <string name="warranty_expiry">Warranty expires</string>
+    <string name="warranty_active">Warranty until %1$s</string>
+    <string name="warranty_expired">Warranty expired %1$s</string>
+    <string name="personal_documents">Your documents</string>
+    <string name="personal_documents_hint">Licence, permits and anything else that belongs to you rather than a vehicle</string>
+    <string name="personal_documents_empty">No personal documents yet.</string>
+    <string name="add_personal_document">Add document</string>
+
     <!-- ═══ Search ═══ -->
     <string name="search_everything">Search</string>
     <string name="search_everything_hint">Search vehicles, events, documents, reminders</string>

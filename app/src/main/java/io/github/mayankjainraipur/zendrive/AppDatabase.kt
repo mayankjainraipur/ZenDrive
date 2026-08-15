@@ -29,6 +29,8 @@ data class Vehicle(
     val notes: String? = null,
     val isArchived: Boolean = false,
     val archivedAt: Long? = null,
+    /** Manufacturer warranty expiry, epoch millis; null when unknown or lapsed long ago. */
+    val warrantyExpiresAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )
@@ -108,7 +110,7 @@ data class EventMeta(
         ServiceSchedule::class,
         BackupRestoreLog::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -384,10 +386,63 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `vehicle` ADD COLUMN `warrantyExpiresAt` INTEGER")
+
+                // Personal documents -- a driving licence, say -- belong to the owner, not to a
+                // vehicle. SQLite cannot drop a NOT NULL constraint in place, so the table is
+                // rebuilt with vehicleId nullable and the rows copied across.
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `vehicle_documents_new` (
+                      `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                      `vehicleId` INTEGER,
+                      `title` TEXT NOT NULL,
+                      `documentType` TEXT NOT NULL,
+                      `fileName` TEXT NOT NULL,
+                      `mimeType` TEXT,
+                      `storageUri` TEXT NOT NULL,
+                      `localFileName` TEXT,
+                      `fileSizeBytes` INTEGER,
+                      `expiresAt` INTEGER,
+                      `notes` TEXT,
+                      `createdAt` INTEGER NOT NULL,
+                      `updatedAt` INTEGER NOT NULL,
+                      FOREIGN KEY(`vehicleId`) REFERENCES `vehicle`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO `vehicle_documents_new`
+                      (`id`, `vehicleId`, `title`, `documentType`, `fileName`, `mimeType`,
+                       `storageUri`, `localFileName`, `fileSizeBytes`, `expiresAt`, `notes`,
+                       `createdAt`, `updatedAt`)
+                    SELECT `id`, `vehicleId`, `title`, `documentType`, `fileName`, `mimeType`,
+                           `storageUri`, `localFileName`, `fileSizeBytes`, `expiresAt`, `notes`,
+                           `createdAt`, `updatedAt`
+                    FROM `vehicle_documents`
+                    """.trimIndent()
+                )
+                db.execSQL("DROP TABLE `vehicle_documents`")
+                db.execSQL("ALTER TABLE `vehicle_documents_new` RENAME TO `vehicle_documents`")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_vehicle_documents_vehicleId` " +
+                        "ON `vehicle_documents` (`vehicleId`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_vehicle_documents_vehicleId_documentType` " +
+                        "ON `vehicle_documents` (`vehicleId`, `documentType`)"
+                )
+            }
+        }
+
         /** Single source of truth for the migration chain — the builder and the tests share it. */
         val ALL_MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
-            MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10
+            MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11
         )
 
         fun getInstance(context: android.content.Context): AppDatabase {

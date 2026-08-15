@@ -25,7 +25,8 @@ import androidx.room.PrimaryKey
 )
 data class VehicleDocument(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val vehicleId: Int,
+    /** Null for a personal document — a driving licence belongs to the owner, not a vehicle. */
+    val vehicleId: Int? = null,
     /** Short label shown in UI */
     val title: String,
     /** e.g. insurance, registration, puc, invoice, warranty, other */

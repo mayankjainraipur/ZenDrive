@@ -346,6 +346,69 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- Documents that belong to the owner, not a vehicle -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    app:cardBackgroundColor="@color/card_bg"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/personal_documents"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/personal_documents_hint"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                        <LinearLayout
+                            android:id="@+id/personalDocsContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="vertical" />
+
+                        <TextView
+                            android:id="@+id/tvNoPersonalDocs"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/personal_documents_empty"
+                            android:textColor="@color/text_hint"
+                            android:textSize="13sp"
+                            android:visibility="gone" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAddPersonalDoc"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="@string/add_personal_document"
+                            android:textAllCaps="false"
+                            android:textColor="@color/accent"
+                            app:cornerRadius="12dp"
+                            app:strokeColor="@color/card_stroke" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnEdit"
                     android:layout_width="match_parent"

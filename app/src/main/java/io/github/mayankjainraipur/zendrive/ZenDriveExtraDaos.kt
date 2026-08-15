@@ -48,6 +48,10 @@ interface VehicleDocumentDao {
     @Query("SELECT * FROM vehicle_documents WHERE expiresAt IS NOT NULL")
     suspend fun getDocumentsWithExpiry(): List<VehicleDocument>
 
+    /** Documents belonging to the owner rather than any vehicle. */
+    @Query("SELECT * FROM vehicle_documents WHERE vehicleId IS NULL ORDER BY createdAt DESC")
+    suspend fun getPersonalDocuments(): List<VehicleDocument>
+
     @Query(
         """
         SELECT * FROM vehicle_documents

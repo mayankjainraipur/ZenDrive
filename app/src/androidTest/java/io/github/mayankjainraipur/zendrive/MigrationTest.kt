@@ -278,10 +278,81 @@ class MigrationTest {
         db.close()
     }
 
+    /**
+     * 10 -> 11 rebuilds vehicle_documents to make vehicleId nullable, since SQLite cannot drop a
+     * NOT NULL in place. A rebuild copies rows by hand, which is exactly where data goes missing,
+     * so this asserts the existing rows come through intact.
+     */
+    @Test
+    fun migrate10To11_rebuildsDocumentsTableWithoutLosingRows() {
+        helper.createDatabase(testDb, 10).apply {
+            execSQL(
+                """
+                INSERT INTO vehicle
+                  (id, name, vehicleNumber, type, fuelType, brand, model, year,
+                   purchaseDate, odometerReading, notes, isArchived, archivedAt,
+                   createdAt, updatedAt)
+                VALUES (1, 'Swift', 'CG04 AB 1234', 'car', 'petrol', 'Maruti', 'Swift', 2019,
+                        NULL, 42000.0, NULL, 0, NULL, 1700000000000, 1700000000000)
+                """.trimIndent()
+            )
+            execSQL(
+                """
+                INSERT INTO vehicle_documents
+                  (id, vehicleId, title, documentType, fileName, mimeType, storageUri,
+                   localFileName, fileSizeBytes, expiresAt, notes, createdAt, updatedAt)
+                VALUES (5, 1, 'Insurance 2024', 'insurance', 'policy.pdf', 'application/pdf',
+                        'content://downloads/42', 'abc123.pdf', 2048, 1800000000000,
+                        'renew early', 1700000000000, 1700000000000)
+                """.trimIndent()
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(testDb, 11, true, *AppDatabase.ALL_MIGRATIONS)
+
+        db.query(
+            """
+            SELECT id, vehicleId, title, documentType, localFileName, fileSizeBytes, expiresAt, notes
+            FROM vehicle_documents WHERE id = 5
+            """.trimIndent()
+        ).use { c ->
+            assertTrue("the rebuilt table lost the row", c.moveToFirst())
+            assertEquals(5, c.getInt(0))
+            assertEquals(1, c.getInt(1))
+            assertEquals("Insurance 2024", c.getString(2))
+            assertEquals("insurance", c.getString(3))
+            assertEquals("abc123.pdf", c.getString(4))
+            assertEquals(2048, c.getInt(5))
+            assertEquals(1800000000000L, c.getLong(6))
+            assertEquals("renew early", c.getString(7))
+        }
+
+        // The point of the rebuild: a document with no vehicle is now allowed.
+        db.execSQL(
+            """
+            INSERT INTO vehicle_documents
+              (vehicleId, title, documentType, fileName, storageUri, createdAt, updatedAt)
+            VALUES (NULL, 'Driving licence', 'driving_licence', 'dl.pdf', '',
+                    1700000000000, 1700000000000)
+            """.trimIndent()
+        )
+        db.query("SELECT COUNT(*) FROM vehicle_documents WHERE vehicleId IS NULL").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(1, c.getInt(0))
+        }
+
+        db.query("SELECT warrantyExpiresAt FROM vehicle WHERE id = 1").use { c ->
+            assertTrue(c.moveToFirst())
+            assertTrue("warranty starts unknown, not zero", c.isNull(0))
+        }
+        db.close()
+    }
+
     @Test
     fun migratedDatabaseOpensWithRoom() {
         helper.createDatabase(testDb, 4).close()
-        helper.runMigrationsAndValidate(testDb, 9, true, *AppDatabase.ALL_MIGRATIONS).close()
+        helper.runMigrationsAndValidate(testDb, 11, true, *AppDatabase.ALL_MIGRATIONS).close()
 
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val db = Room.databaseBuilder(context, AppDatabase::class.java, testDb)

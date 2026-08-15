@@ -37,12 +37,15 @@ object ReminderSync {
 
         for (doc in db.vehicleDocumentDao().getDocumentsWithExpiry()) {
             val dueAt = doc.expiresAt ?: continue
+            // Reminder.vehicleId is not nullable, so a personal document — one with no vehicle —
+            // cannot yet generate one. Its expiry still shows on the document itself.
+            val vehicleId = doc.vehicleId ?: continue
             alive += Reminder.SOURCE_DOCUMENT to doc.id
             upsert(
                 dao = reminderDao,
                 sourceType = Reminder.SOURCE_DOCUMENT,
                 sourceId = doc.id,
-                vehicleId = doc.vehicleId,
+                vehicleId = vehicleId,
                 eventId = null,
                 title = doc.title,
                 description = doc.notes,
