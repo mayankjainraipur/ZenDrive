@@ -52,6 +52,11 @@ data class CategoryExpense(
     val totalCost: Double
 )
 
+data class VehicleExpense(
+    val vehicleId: Int,
+    val totalCost: Double
+)
+
 // ─── VehicleEventDao ─────────────────────────────────────────────────────────
 
 @Dao
@@ -90,6 +95,25 @@ interface VehicleEventDao {
 
     @Query("SELECT * FROM vehicle_event WHERE odometer IS NOT NULL AND odometer > 0")
     suspend fun getAllEventsWithOdometer(): List<VehicleEvent>
+
+    // --- Cross-vehicle totals, for the dashboard ---
+
+    @Query(
+        """
+        SELECT SUM(cost) FROM vehicle_event
+        WHERE cost IS NOT NULL AND cost > 0 AND date >= :startDate AND date <= :endDate
+        """
+    )
+    suspend fun getTotalExpensesInRange(startDate: Long, endDate: Long): Double?
+
+    @Query(
+        """
+        SELECT vehicleId, SUM(cost) as totalCost FROM vehicle_event
+        WHERE cost IS NOT NULL AND cost > 0 AND date >= :startDate AND date <= :endDate
+        GROUP BY vehicleId
+        """
+    )
+    suspend fun getExpensesByVehicle(startDate: Long, endDate: Long): List<VehicleExpense>
 
     @Query("DELETE FROM vehicle_event WHERE vehicleId = :vehicleId")
     suspend fun deleteAllEventsForVehicle(vehicleId: Int)

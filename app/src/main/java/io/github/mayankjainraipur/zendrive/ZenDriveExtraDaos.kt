@@ -93,6 +93,10 @@ interface ReminderDao {
     @Query("SELECT * FROM reminder WHERE sourceType != 'manual'")
     suspend fun getGenerated(): List<Reminder>
 
+    /** Across all vehicles, soonest first — what the dashboard leads with. */
+    @Query("SELECT * FROM reminder WHERE isCompleted = 0 ORDER BY dueAt ASC LIMIT :limit")
+    suspend fun getUpcoming(limit: Int): List<Reminder>
+
     @Query("DELETE FROM reminder WHERE vehicleId = :vehicleId")
     suspend fun deleteAllForVehicle(vehicleId: Int)
 }

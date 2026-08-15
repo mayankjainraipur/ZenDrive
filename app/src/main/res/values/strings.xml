@@ -288,6 +288,24 @@
     <string name="reminder_overdue_days">Overdue by %1$d days</string>
     <string name="reminder_action_done">Mark done</string>
     <string name="reminder_action_snooze">Snooze a day</string>
+    <!-- ═══ Dashboard ═══ -->
+    <string name="tab_home">Home</string>
+    <string name="dashboard_due_next">Due next</string>
+    <string name="dashboard_nothing_due">Nothing due. Add a due date to an event or an expiry to a document and it will show up here.</string>
+    <string name="dashboard_spend_title">Spending</string>
+    <string name="dashboard_this_month">This month</string>
+    <string name="dashboard_last_month">Last month</string>
+    <string name="dashboard_change_up">▲ %1$d%% vs last month</string>
+    <string name="dashboard_change_down">▼ %1$d%% vs last month</string>
+    <string name="dashboard_change_same">Same as last month</string>
+    <string name="dashboard_no_last_month">No spending recorded last month</string>
+    <string name="dashboard_vehicles">Your vehicles</string>
+    <string name="dashboard_no_vehicles">No vehicles yet. Add one from the Vehicles tab.</string>
+    <string name="dashboard_vehicle_spend">%1$s this month</string>
+    <string name="dashboard_overdue">Overdue</string>
+    <string name="dashboard_due_today">Today</string>
+    <string name="dashboard_due_in">In %1$d days</string>
+
     <!-- ═══ Odometer ═══ -->
     <string name="odometer_log_reading">Log odometer reading</string>
     <string name="odometer_current_reading">Current reading</string>

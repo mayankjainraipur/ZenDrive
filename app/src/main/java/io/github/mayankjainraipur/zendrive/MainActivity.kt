@@ -84,6 +84,10 @@ class MainActivity : AppCompatActivity() {
 
         bottomNav.setOnItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
+                R.id.nav_dashboard -> {
+                    showFragment(DashboardFragment::class.java.simpleName)
+                    true
+                }
                 R.id.nav_vehicles -> {
                     showFragment(VehiclesFragment::class.java.simpleName)
                     true
@@ -112,8 +116,10 @@ class MainActivity : AppCompatActivity() {
                 bottomNav.visibility = if (!showOnboarding) View.VISIBLE else View.GONE
 
                 if (!showOnboarding && supportFragmentManager.fragments.isEmpty()) {
-                    showFragment(VehiclesFragment::class.java.simpleName)
-                    bottomNav.selectedItemId = R.id.nav_vehicles
+                    // Opens on the dashboard: the app should answer what needs attention before
+                    // being asked, rather than presenting a list.
+                    showFragment(DashboardFragment::class.java.simpleName)
+                    bottomNav.selectedItemId = R.id.nav_dashboard
                     requestNotificationPermissionIfNeeded()
                 }
             }
@@ -153,6 +159,7 @@ class MainActivity : AppCompatActivity() {
         var fragment = fragmentManager.findFragmentByTag(tag)
         if (fragment == null) {
             fragment = when (tag) {
+                DashboardFragment::class.java.simpleName -> DashboardFragment()
                 VehiclesFragment::class.java.simpleName -> VehiclesFragment()
                 ExpensesFragment::class.java.simpleName -> ExpensesFragment()
                 RemindersFragment::class.java.simpleName -> RemindersFragment()
