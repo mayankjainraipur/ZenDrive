@@ -21,11 +21,15 @@ class ReminderWorker(
     override suspend fun doWork(): Result {
         val db = AppDatabase.getInstance(applicationContext)
 
+        // Pick up due dates and document expiries added since the last run — including any that
+        // arrived via a restore rather than through the UI.
+        ReminderSync.reconcile(db)
+
         // Warn ahead of the due date — a reminder that first speaks on the day it expires is
         // just a record of being late.
+        val now = System.currentTimeMillis()
         val leadMillis = TimeUnit.DAYS.toMillis(UserPrefs.reminderLeadDays.toLong())
-        val cutoff = System.currentTimeMillis() + leadMillis
-        val dueReminders = db.reminderDao().getDueOrOverdue(cutoff)
+        val dueReminders = db.reminderDao().getDueOrOverdue(now + leadMillis, now)
 
         if (dueReminders.isEmpty()) return Result.success()
 

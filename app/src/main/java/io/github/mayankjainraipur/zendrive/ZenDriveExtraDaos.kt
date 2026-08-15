@@ -45,6 +45,9 @@ interface VehicleDocumentDao {
     @Query("SELECT * FROM vehicle_documents WHERE localFileName IS NULL")
     suspend fun getDocumentsMissingLocalCopy(): List<VehicleDocument>
 
+    @Query("SELECT * FROM vehicle_documents WHERE expiresAt IS NOT NULL")
+    suspend fun getDocumentsWithExpiry(): List<VehicleDocument>
+
     @Query("DELETE FROM vehicle_documents WHERE vehicleId = :vehicleId")
     suspend fun deleteAllForVehicle(vehicleId: Int)
 }
@@ -67,10 +70,28 @@ interface ReminderDao {
     @Query("SELECT * FROM reminder WHERE id = :id")
     suspend fun getById(id: Int): Reminder?
 
+    /**
+     * What should be announced right now: due within the lead window, not already done, and not
+     * snoozed past [nowMillis]. notifyAt is the snooze override — it suppresses the notification
+     * without moving the actual due date.
+     */
     @Query(
-        "SELECT * FROM reminder WHERE isCompleted = 0 AND dueAt <= :untilMillis ORDER BY dueAt ASC"
+        """
+        SELECT * FROM reminder
+        WHERE isCompleted = 0
+          AND dueAt <= :untilMillis
+          AND (notifyAt IS NULL OR notifyAt <= :nowMillis)
+        ORDER BY dueAt ASC
+        """
     )
-    suspend fun getDueOrOverdue(untilMillis: Long): List<Reminder>
+    suspend fun getDueOrOverdue(untilMillis: Long, nowMillis: Long): List<Reminder>
+
+    @Query("SELECT * FROM reminder WHERE sourceType = :sourceType AND sourceId = :sourceId LIMIT 1")
+    suspend fun getBySource(sourceType: String, sourceId: Int): Reminder?
+
+    /** Every auto-generated reminder, for reconciling against its source. */
+    @Query("SELECT * FROM reminder WHERE sourceType != 'manual'")
+    suspend fun getGenerated(): List<Reminder>
 
     @Query("DELETE FROM reminder WHERE vehicleId = :vehicleId")
     suspend fun deleteAllForVehicle(vehicleId: Int)

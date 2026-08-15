@@ -232,39 +232,13 @@ class AddEventActivity : AppCompatActivity() {
                     )
                 }
                 syncVehicleOdometer(db, odometer)
-                autoCreateReminder(db, newId, eventType, title, nextDueDateMillis)
                 Toast.makeText(this@AddEventActivity, "Event saved!", Toast.LENGTH_SHORT).show()
             }
+            // Derives the reminder from nextDueDate on both paths, so editing a due date moves
+            // the reminder and clearing one removes it.
+            ReminderSync.reconcile(db)
             finish()
         }
-    }
-
-    private suspend fun autoCreateReminder(
-        db: AppDatabase,
-        eventId: Int,
-        eventType: String,
-        title: String,
-        nextDueDate: Long?
-    ) {
-        if (nextDueDate == null) return
-        val reminderType = when (eventType.lowercase(Locale.getDefault())) {
-            "service" -> "service"
-            "insurance" -> "insurance"
-            "tax" -> "tax"
-            else -> "custom"
-        }
-        val now = System.currentTimeMillis()
-        val reminder = Reminder(
-            vehicleId = vehicleId,
-            eventId = eventId,
-            title = "$title — due",
-            reminderType = reminderType,
-            dueAt = nextDueDate,
-            createdAt = now,
-            updatedAt = now
-        )
-        db.reminderDao().insert(reminder)
-        ReminderScheduler.scheduleOneTime(this@AddEventActivity)
     }
 
     private suspend fun syncVehicleOdometer(db: AppDatabase, odometer: Double?) {

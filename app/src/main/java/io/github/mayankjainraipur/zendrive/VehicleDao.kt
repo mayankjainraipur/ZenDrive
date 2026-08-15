@@ -85,6 +85,9 @@ interface VehicleEventDao {
     @Query("SELECT * FROM vehicle_event WHERE nextDueDate IS NOT NULL AND nextDueDate <= :epochMillis ORDER BY nextDueDate ASC")
     suspend fun getUpcomingEvents(epochMillis: Long): List<VehicleEvent>
 
+    @Query("SELECT * FROM vehicle_event WHERE nextDueDate IS NOT NULL")
+    suspend fun getEventsWithNextDue(): List<VehicleEvent>
+
     @Query("DELETE FROM vehicle_event WHERE vehicleId = :vehicleId")
     suspend fun deleteAllEventsForVehicle(vehicleId: Int)
 

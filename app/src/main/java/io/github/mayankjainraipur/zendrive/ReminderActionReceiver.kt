@@ -32,8 +32,11 @@ class ReminderActionReceiver : BroadcastReceiver() {
                     ACTION_COMPLETE -> dao.update(
                         reminder.copy(isCompleted = true, completedAt = now, updatedAt = now)
                     )
+                    // Snooze sets notifyAt, not dueAt: the insurance still expires when it
+                    // expires. Moving dueAt would also make the reconciler treat a generated
+                    // reminder as out of step with its source and reset it.
                     ACTION_SNOOZE -> dao.update(
-                        reminder.copy(dueAt = now + TimeUnit.DAYS.toMillis(1), updatedAt = now)
+                        reminder.copy(notifyAt = now + TimeUnit.DAYS.toMillis(1), updatedAt = now)
                     )
                 }
                 NotificationManagerCompat.from(appContext).cancel(reminderId)

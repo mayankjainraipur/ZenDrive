@@ -85,13 +85,78 @@ class MigrationTest {
     }
 
     /**
+     * The old AddEventActivity auto-created reminders titled "<event title> — due". The reconciler
+     * now owns those, so 5 -> 6 has to adopt them; otherwise every one gets a duplicate beside it.
+     * A reminder the user wrote and merely linked to an event must stay manual.
+     */
+    @Test
+    fun migrate5To6_adoptsOldAutoCreatedRemindersButNotHandWrittenOnes() {
+        helper.createDatabase(testDb, 5).apply {
+            execSQL(
+                """
+                INSERT INTO vehicle
+                  (id, name, vehicleNumber, type, fuelType, brand, model, year,
+                   purchaseDate, odometerReading, notes, isArchived, archivedAt,
+                   createdAt, updatedAt)
+                VALUES (1, 'Swift', 'CG04 AB 1234', 'car', 'petrol', 'Maruti', 'Swift', 2019,
+                        NULL, 42000.0, NULL, 0, NULL, 1700000000000, 1700000000000)
+                """.trimIndent()
+            )
+            execSQL(
+                """
+                INSERT INTO vehicle_event
+                  (id, vehicleId, eventType, title, description, date, odometer, cost,
+                   nextDueDate, createdAt)
+                VALUES (7, 1, 'service', 'Oil change', NULL, 1700000000000, 42000.0, 3500.0,
+                        1800000000000, 1700000000000)
+                """.trimIndent()
+            )
+            // Written by the old auto-create path.
+            execSQL(
+                """
+                INSERT INTO reminder
+                  (id, vehicleId, eventId, title, description, reminderType, dueAt, repeatRule,
+                   isCompleted, completedAt, notifyAt, createdAt, updatedAt)
+                VALUES (1, 1, 7, 'Oil change — due', NULL, 'service', 1800000000000, 'none',
+                        0, NULL, NULL, 1700000000000, 1700000000000)
+                """.trimIndent()
+            )
+            // Written by the user, who happened to link it to the same event.
+            execSQL(
+                """
+                INSERT INTO reminder
+                  (id, vehicleId, eventId, title, description, reminderType, dueAt, repeatRule,
+                   isCompleted, completedAt, notifyAt, createdAt, updatedAt)
+                VALUES (2, 1, 7, 'Ask garage about the rattle', NULL, 'custom', 1800000000000,
+                        'none', 0, NULL, NULL, 1700000000000, 1700000000000)
+                """.trimIndent()
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(testDb, 6, true, *AppDatabase.ALL_MIGRATIONS)
+
+        db.query("SELECT sourceType, sourceId FROM reminder WHERE id = 1").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("event", c.getString(0))
+            assertEquals(7, c.getInt(1))
+        }
+        db.query("SELECT sourceType, sourceId FROM reminder WHERE id = 2").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("hand-written reminder must not be adopted", "manual", c.getString(0))
+            assertTrue("manual reminder should have no sourceId", c.isNull(1))
+        }
+        db.close()
+    }
+
+    /**
      * Structural validation alone would not catch an identity-hash mismatch — that only surfaces
      * when Room itself opens the database, which is exactly what happens on a user's device.
      */
     @Test
     fun migratedDatabaseOpensWithRoom() {
         helper.createDatabase(testDb, 4).close()
-        helper.runMigrationsAndValidate(testDb, 5, true, *AppDatabase.ALL_MIGRATIONS).close()
+        helper.runMigrationsAndValidate(testDb, 6, true, *AppDatabase.ALL_MIGRATIONS).close()
 
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val db = Room.databaseBuilder(context, AppDatabase::class.java, testDb)

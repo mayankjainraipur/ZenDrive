@@ -288,6 +288,9 @@
     <string name="reminder_overdue_days">Overdue by %1$d days</string>
     <string name="reminder_action_done">Mark done</string>
     <string name="reminder_action_snooze">Snooze a day</string>
+    <string name="reminder_generated_title">Managed automatically</string>
+    <string name="reminder_generated_event">This reminder comes from an event\'s next due date. Change or clear that date on the event and this updates with it.</string>
+    <string name="reminder_generated_document">This reminder comes from a document\'s expiry date. Change or clear that date on the document and this updates with it.</string>
 
     <string name="clear_expiry">Clear</string>
 

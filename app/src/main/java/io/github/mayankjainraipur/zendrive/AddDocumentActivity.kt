@@ -286,6 +286,8 @@ class AddDocumentActivity : AppCompatActivity() {
                 committed = true
                 Toast.makeText(this@AddDocumentActivity, R.string.document_saved, Toast.LENGTH_SHORT).show()
             }
+            // An expiry date is a promise to warn the user; derive the reminder from it.
+            ReminderSync.reconcile(db)
             finish()
         }
     }

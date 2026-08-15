@@ -52,7 +52,13 @@ object JsonBackupManager {
                 for (e in events) {
                     allMeta.addAll(db.eventMetaDao().getMetaForEvent(e.id))
                 }
-                allReminders.addAll(db.reminderDao().getRemindersForVehicle(v.id))
+                // Only reminders the user actually wrote. Generated ones are derived from event
+                // due dates and document expiries, which are themselves in this bundle, so the
+                // reconciler rebuilds them on the far side. Carrying them would duplicate every
+                // one of them, since their sourceId points at row ids that change on import.
+                allReminders.addAll(
+                    db.reminderDao().getRemindersForVehicle(v.id).filterNot { it.isGenerated }
+                )
                 allDocuments.addAll(db.vehicleDocumentDao().getDocumentsForVehicle(v.id))
             }
 

@@ -130,6 +130,22 @@ class RemindersFragment : Fragment() {
     }
 
     private fun showDeleteDialog(db: AppDatabase, reminder: Reminder) {
+        // Deleting a generated reminder would achieve nothing — the next reconcile recreates it
+        // from its source. Say so, rather than letting it silently reappear.
+        if (reminder.isGenerated) {
+            val messageRes = if (reminder.sourceType == Reminder.SOURCE_DOCUMENT) {
+                R.string.reminder_generated_document
+            } else {
+                R.string.reminder_generated_event
+            }
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.reminder_generated_title)
+                .setMessage(messageRes)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            return
+        }
+
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.action_delete)
             .setMessage("Delete \"${reminder.title}\"?")

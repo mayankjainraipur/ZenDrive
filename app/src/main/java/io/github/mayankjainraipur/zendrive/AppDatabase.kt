@@ -96,7 +96,7 @@ data class EventMeta(
         Reminder::class,
         BackupRestoreLog::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -237,9 +237,34 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Everything that exists already was created by hand, so it is manual by definition.
+                db.execSQL(
+                    "ALTER TABLE `reminder` ADD COLUMN `sourceType` TEXT NOT NULL DEFAULT 'manual'"
+                )
+                db.execSQL("ALTER TABLE `reminder` ADD COLUMN `sourceId` INTEGER")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_reminder_sourceType_sourceId` " +
+                        "ON `reminder` (`sourceType`, `sourceId`)"
+                )
+                // Adopt the reminders the old AddEventActivity auto-created, so the reconciler
+                // takes them over instead of adding a second one beside each. Those rows are
+                // identifiable by the "<title> — due" wording it used; a reminder the user wrote
+                // themselves and merely linked to an event stays manual.
+                db.execSQL(
+                    """
+                    UPDATE `reminder`
+                    SET `sourceType` = 'event', `sourceId` = `eventId`
+                    WHERE `eventId` IS NOT NULL AND `title` LIKE '%' || ' — due'
+                    """.trimIndent()
+                )
+            }
+        }
+
         /** Single source of truth for the migration chain — the builder and the tests share it. */
         val ALL_MIGRATIONS: Array<Migration> = arrayOf(
-            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6
         )
 
         fun getInstance(context: android.content.Context): AppDatabase {

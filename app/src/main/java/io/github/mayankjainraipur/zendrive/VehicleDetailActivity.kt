@@ -234,6 +234,8 @@ class VehicleDetailActivity : AppCompatActivity() {
                 lifecycleScope.launch {
                     db.vehicleDocumentDao().delete(doc)
                     DocumentStore.delete(this@VehicleDetailActivity, doc.localFileName)
+                    // Takes the document's expiry reminder with it.
+                    ReminderSync.reconcile(db)
                     Toast.makeText(this@VehicleDetailActivity, R.string.document_deleted, Toast.LENGTH_SHORT).show()
                     loadDocuments()
                 }
