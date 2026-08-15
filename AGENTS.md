@@ -8,8 +8,9 @@ Core Principles
 •	Local-first storage using Room database on the device
 •	No server-side database or shared multi-user system
 •	Personal data remains private to the app owner
-•	Google Drive is used only for backup and restore
-•	All important records can be exported as a JSON backup file
+•	Google Drive is used only for backup and restore, and only when the user turns it on
+•	Android Auto Backup is **disabled** (`allowBackup="false"`), so no data leaves the device unless the user explicitly exports or enables Drive backup
+•	All records can be exported as a **zip archive** — `backup.json` plus every attached document under `documents/`
 •	The app must work fully offline after setup
 
 ---
@@ -32,13 +33,17 @@ Pinned dependency versions: [`app/build.gradle.kts`](app/build.gradle.kts).
 
 ## Source layout (current)
 
-Kotlin sources live under `app/src/main/java/com/example/zendrive/` (single package). Main types include:
+Kotlin sources live under `app/src/main/java/io/github/mayankjainraipur/zendrive/` (single flat package). Main types include:
 
-- **UI:** `MainActivity`, `VehicleDetailActivity`, `AddVehicleActivity`, `AddEventActivity`, `EventDetailActivity`; list adapters (`VehicleAdapter`, `EventAdapter`).
+- **UI (activities):** `MainActivity`, `VehicleDetailActivity`, `AddVehicleActivity`, `AddEventActivity`, `EventDetailActivity`, `AddDocumentActivity`, `AddReminderActivity`, `ProfileActivity`, `AppLockActivity`.
+- **UI (fragments):** `VehiclesFragment`, `ExpensesFragment`, `RemindersFragment`, `SyncFragment` — hosted by `MainActivity` behind a bottom nav.
+- **UI (adapters):** `VehicleAdapter`, `EventAdapter`, `ExpenseAdapter`, `DocumentAdapter`, `ReminderAdapter`.
 - **State:** `LogViewModel`, `ViewModelFactory`.
-- **Data:** `AppDatabase`, Room entities and DAOs (`Vehicle`, `VehicleEvent`, `EventMeta`, `VehicleDao`, `VehicleEventDao`, `EventMetaDao`).
+- **Data:** `AppDatabase`, entities and DAOs (`VehicleDao`, `ZenDriveExtraDaos`), `DocumentStore` (owns every attached file on disk).
+- **Backup:** `JsonBackupManager` (zip archive format), `DriveBackupManager`, `BackupModels`, `DriveAutoBackupWorker`.
+- **Reminders:** `ReminderScheduler`, `ReminderWorker`.
 
-The README describes a layered folder layout (`data/`, `ui/`, `viewmodel/`); the codebase is currently flatter—**follow the existing structure** unless reorganizing is explicitly requested.
+Everything sits in one flat package rather than `data/` / `ui/` / `viewmodel/` folders—**follow the existing structure** unless reorganizing is explicitly requested.
 
 ---
 
@@ -54,11 +59,19 @@ The README describes a layered folder layout (`data/`, `ui/`, `viewmodel/`); the
 
 ## Data model (short)
 
-- **Vehicle:** identity, display name, registration/plate (`vehicleNumber` in code), type, fuel, brand, model, year, purchase date, odometer, notes, timestamps.
+Seven tables; Room schema **version 5**.
+
+- **Vehicle:** identity, display name, registration/plate (`vehicleNumber` in code), type, fuel, brand, model, year, purchase date, odometer, notes, archive flag, timestamps.
 - **VehicleEvent:** linked to a vehicle (`vehicleId`), event type, title, description, dates, cost, odometer, optional next due date.
 - **EventMeta:** optional key/value rows tied to an event.
+- **UserProfile:** single row (`id` = 1) — display name, email, mobile, currency, distance unit, date format, theme mode, reminder lead days, app-lock and backup flags, Drive account.
+- **VehicleDocument:** a file attached to a vehicle. Read **`localFileName`** (the app-private copy owned by `DocumentStore`), not `storageUri` — that holds only the original SAF URI and may point at a file that is gone.
+- **Reminder:** per-vehicle, optionally linked to an event; due date, repeat rule, completion state.
+- **BackupRestoreLog:** audit trail for every backup and restore attempt.
 
-Schema changes require **Room version bumps** and **migrations** (or a destructive fallback only if acceptable for users—usually not for production).
+Schema changes require a **Room version bump** and a **migration**. There is deliberately **no destructive fallback**: a missing or mismatched migration must fail loudly rather than silently wipe the user's records. Do not add `fallbackToDestructiveMigration()`.
+
+Schemas are exported to `app/schemas/` (`exportSchema = true`) and are **committed** — they are the baseline a migration test verifies against, so regenerate and commit them whenever the version changes.
 
 ---
 
@@ -94,7 +107,7 @@ Useful defaults when touching behavior that typical Android apps need—even if 
 |------|--------|
 | **Manifest** | Activities and required `intent-filter` entries; exported components (API 31+). |
 | **Lifecycle** | Collect flows in `STARTED` where appropriate; cancel work with lifecycle. |
-| **Persistence** | Room migrations for schema changes; backup rules if backup/sensitive data matters. |
+| **Persistence** | Every schema change needs a migration—no destructive fallback. Android Auto Backup is off, so the explicit export and Drive backup are the only ways data leaves the device. |
 | **UX** | Empty states, loading/error handling, Material patterns; FAB for primary actions where used. |
 | **Quality** | Unit tests for logic; instrumentation tests for DB/UI critical paths (`src/test`, `src/androidTest`)—currently minimal/none; add when changing critical behavior. |
 | **Release** | Signing config (CI/local); ProGuard/R8 rules when minify is enabled (`release` currently has minify off). |

@@ -20,8 +20,6 @@ ZenDrive is a local-first, native Android app for owners who want a clear record
 - [Tech stack](#tech-stack)
 - [Architecture](#architecture)
 - [Getting started](#getting-started)
-- [Project layout](#project-layout)
-- [Data model](#data-model)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -35,6 +33,11 @@ ZenDrive is a local-first, native Android app for owners who want a clear record
 | **Vehicles** | Multiple vehicles; name, plate, type, fuel, brand, model, year; purchase date and odometer; notes |
 | **Events** | Service, insurance, fuel, repair, tax, and more; title, description, date, cost, odometer; optional next due date for recurring work |
 | **Metadata** | Custom key/value fields on events for extra detail |
+| **Documents** | Attach insurance, RC, PUC and invoices per vehicle with an expiry date; files are copied into private app storage, so a record never depends on the original staying put |
+| **Reminders** | Due dates with repeat rules, raised as notifications |
+| **Expenses** | Totals over five time ranges, breakdown by category, fuel cost per km |
+| **Backup** | Export a zip archive (`backup.json` plus every attached document), or back up to Google Drive; restore from either |
+| **Privacy** | Biometric app lock; Android Auto Backup is off, so nothing leaves the device unless you export it or turn on Drive backup |
 | **UX** | Material Design UI, list search, empty states, FAB for quick actions |
 
 ---
@@ -56,9 +59,10 @@ Pinned library versions live in [`app/build.gradle.kts`](app/build.gradle.kts).
 
 ## Architecture
 
-- **UI:** Activities host screens; adapters bind `RecyclerView` rows.
+- **UI:** Activities host screens; four fragments sit behind a bottom nav; adapters bind `RecyclerView` rows.
 - **State:** `LogViewModel` coordinates reads/writes through DAOs.
-- **Data:** Room entities (`Vehicle`, `VehicleEvent`, `EventMeta`) with foreign keys where needed.
+- **Data:** Seven Room entities — `Vehicle`, `VehicleEvent`, `EventMeta`, `VehicleDocument`, `Reminder`, `UserProfile`, `BackupRestoreLog` — with foreign keys and cascades where needed. Attached files are owned by `DocumentStore`, not referenced in place.
+- **Migrations:** Every schema change ships a migration; there is no destructive fallback, and schemas are exported to `app/schemas/`.
 
 ---
 
@@ -100,11 +104,12 @@ Output: `app/build/outputs/apk/release/`
 Ideas for future releases (not commitments):
 
 - Export to CSV / PDF  
-- Backup / sync (optional cloud)  
-- Reminders for upcoming due dates  
-- Fuel-efficiency and service-interval helpers  
-- Multi-profile support  
-- Themed / dark mode polish  
+- Reminders generated automatically from event due dates and document expiry  
+- Fuel volume capture, so mileage (km/L) can be computed alongside cost per km  
+- Service-interval schedules due on distance or time, whichever lands first  
+- A dashboard showing what is due next and spend this month  
+- Charts for spend over time and category breakdown  
+- Light theme and a settings screen for units, date format and reminder lead time  
 
 ---
 
