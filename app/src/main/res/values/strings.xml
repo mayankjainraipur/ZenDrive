@@ -288,6 +288,18 @@
     <string name="reminder_overdue_days">Overdue by %1$d days</string>
     <string name="reminder_action_done">Mark done</string>
     <string name="reminder_action_snooze">Snooze a day</string>
+    <!-- ═══ Reports ═══ -->
+    <string name="report_export">Export report</string>
+    <string name="report_choose_format">Export report</string>
+    <string name="report_csv">CSV — for a spreadsheet</string>
+    <string name="report_pdf">PDF — to print or share</string>
+    <string name="report_period_all">All time</string>
+    <string name="report_period_this_year">This year</string>
+    <string name="report_period_last_year">Last year</string>
+    <string name="report_saved">Report saved</string>
+    <string name="report_failed">Couldn\'t create the report</string>
+    <string name="report_no_data">Nothing recorded in that period</string>
+
     <!-- ═══ Charts ═══ -->
     <string name="chart_monthly_spend">Spend by month</string>
     <string name="chart_fuel_price">Fuel price per litre</string>

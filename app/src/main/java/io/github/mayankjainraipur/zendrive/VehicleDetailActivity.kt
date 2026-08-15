@@ -197,6 +197,8 @@ class VehicleDetailActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        findViewById<MaterialButton>(R.id.btnExportReport).setOnClickListener { showExportDialog() }
+
         findViewById<MaterialButton>(R.id.btnServiceSchedule).setOnClickListener {
             startActivity(
                 Intent(this, ServiceScheduleActivity::class.java).putExtra("vehicleId", vehicleId)
@@ -238,6 +240,73 @@ class VehicleDetailActivity : AppCompatActivity() {
                 recyclerDocuments.visibility = View.VISIBLE
             }
         }
+    }
+
+    // ─── Report export ───────────────────────────────────────────────────────
+
+    /** Chosen in the dialog, then handed to the file picker once it returns a destination. */
+    private var pendingReport: Pair<Boolean, Pair<Long, Long>>? = null
+
+    private val saveReportLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("*/*")
+    ) { uri ->
+        val request = pendingReport
+        pendingReport = null
+        if (uri == null || request == null) return@registerForActivityResult
+
+        val (isPdf, range) = request
+        val db = AppDatabase.getInstance(this)
+        lifecycleScope.launch {
+            try {
+                contentResolver.openOutputStream(uri)?.use { stream ->
+                    if (isPdf) {
+                        ReportGenerator.writePdf(db, this@VehicleDetailActivity, vehicleId, range.first, range.second, stream)
+                    } else {
+                        ReportGenerator.writeCsv(db, vehicleId, range.first, range.second, stream)
+                    }
+                } ?: throw IllegalStateException("No output stream")
+                Toast.makeText(this@VehicleDetailActivity, R.string.report_saved, Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
+                Toast.makeText(this@VehicleDetailActivity, R.string.report_failed, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun showExportDialog() {
+        val vehicle = boundVehicle ?: return
+        val periods = arrayOf(
+            getString(R.string.report_period_all),
+            getString(R.string.report_period_this_year),
+            getString(R.string.report_period_last_year)
+        )
+        val formats = arrayOf(getString(R.string.report_csv), getString(R.string.report_pdf))
+        var periodIndex = 0
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.report_choose_format)
+            .setSingleChoiceItems(periods, 0) { _, which -> periodIndex = which }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setNeutralButton(formats[0]) { _, _ -> startExport(vehicle, periodIndex, pdf = false) }
+            .setPositiveButton(formats[1]) { _, _ -> startExport(vehicle, periodIndex, pdf = true) }
+            .show()
+    }
+
+    private fun startExport(vehicle: Vehicle, periodIndex: Int, pdf: Boolean) {
+        val thisYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+        val range = when (periodIndex) {
+            1 -> ReportGenerator.yearRange(thisYear)
+            2 -> ReportGenerator.yearRange(thisYear - 1)
+            else -> 0L to Long.MAX_VALUE
+        }
+        pendingReport = pdf to range
+
+        val safeName = vehicle.name.replace(Regex("[^A-Za-z0-9]+"), "_").trim('_')
+        val suffix = when (periodIndex) {
+            1 -> "_$thisYear"
+            2 -> "_${thisYear - 1}"
+            else -> ""
+        }
+        saveReportLauncher.launch("zendrive_${safeName}$suffix.${if (pdf) "pdf" else "csv"}")
     }
 
     private fun loadUsageRate() {
