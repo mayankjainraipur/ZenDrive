@@ -296,6 +296,63 @@ class LogViewModel(
         )
     }
 
+    // ─── Chart series ────────────────────────────────────────────────────────
+
+    /**
+     * Spend per calendar month for the last [months] months, oldest first, including months with
+     * nothing in them — a gap is information, and dropping it would distort the shape.
+     */
+    suspend fun monthlySpend(vehicleId: Int, months: Int = 6): List<Pair<String, Double>> {
+        val out = mutableListOf<Pair<String, Double>>()
+        for (offset in (months - 1) downTo 0) {
+            val start = java.util.Calendar.getInstance().apply {
+                add(java.util.Calendar.MONTH, -offset)
+                set(java.util.Calendar.DAY_OF_MONTH, 1)
+                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }
+            val end = (start.clone() as java.util.Calendar).apply {
+                add(java.util.Calendar.MONTH, 1)
+                add(java.util.Calendar.MILLISECOND, -1)
+            }
+            val total = eventDao.getTotalExpensesForVehicleInRange(
+                vehicleId, start.timeInMillis, end.timeInMillis
+            ) ?: 0.0
+            val label = java.text.SimpleDateFormat("MMM", java.util.Locale.getDefault())
+                .format(start.time)
+            out += label to total
+        }
+        return out
+    }
+
+    /** Price per unit for each fill that recorded one, oldest first. */
+    suspend fun fuelPriceSeries(vehicleId: Int): List<Double> =
+        eventDao.getFuelEventsAsc(vehicleId).mapNotNull { it.pricePerUnit?.takeIf { p -> p > 0 } }
+
+    /**
+     * Mileage for each full-tank-to-full-tank stretch, oldest first — the shape behind the single
+     * average figure, which is where a developing problem shows up first.
+     */
+    suspend fun mileageSeries(vehicleId: Int): List<Double> {
+        val usable = eventDao.getFuelEventsAsc(vehicleId)
+            .filter { it.odometer != null && (it.fuelVolume ?: 0.0) > 0 }
+            .sortedBy { it.odometer }
+        val fullTanks = usable.indices.filter { usable[it].isFullTank }
+        if (fullTanks.size < 2) return emptyList()
+
+        val out = mutableListOf<Double>()
+        for (n in 1 until fullTanks.size) {
+            val from = fullTanks[n - 1]
+            val to = fullTanks[n]
+            val distance = usable[to].odometer!! - usable[from].odometer!!
+            val volume = (from + 1..to).sumOf { usable[it].fuelVolume ?: 0.0 }
+            if (distance > 0 && volume > 0) out += distance / volume
+        }
+        return out
+    }
+
     // ─── Category Breakdown ──────────────────────────────────────────────────
 
     suspend fun getCategoryBreakdown(

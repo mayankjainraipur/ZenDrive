@@ -280,6 +280,93 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Spend per month -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardMonthlySpend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/surface_light"
+                app:cardCornerRadius="16dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/chart_monthly_spend"
+                        android:textColor="@color/accent"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <io.github.mayankjainraipur.zendrive.BarChartView
+                        android:id="@+id/chartMonthlySpend"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Fuel price and mileage over time -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardTrends"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/surface_light"
+                app:cardCornerRadius="16dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:id="@+id/tvFuelPriceHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/chart_fuel_price"
+                        android:textColor="@color/accent"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <io.github.mayankjainraipur.zendrive.LineChartView
+                        android:id="@+id/chartFuelPrice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" />
+
+                    <TextView
+                        android:id="@+id/tvMileageTrendHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/chart_mileage_trend"
+                        android:textColor="@color/accent"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <io.github.mayankjainraipur.zendrive.LineChartView
+                        android:id="@+id/chartMileage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Category Breakdown Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardCategoryBreakdown"
@@ -306,6 +393,12 @@
                         android:textColor="@color/accent"
                         android:textSize="16sp"
                         android:textStyle="bold" />
+
+                    <io.github.mayankjainraipur.zendrive.CategoryBarView
+                        android:id="@+id/chartCategory"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp" />
 
                     <LinearLayout
                         android:id="@+id/categoryContainer"

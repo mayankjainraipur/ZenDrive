@@ -51,6 +51,14 @@ class ExpensesFragment : Fragment() {
     private lateinit var tvFuelFills: TextView
     private lateinit var tvNoFuelData: TextView
     private lateinit var cardCategoryBreakdown: MaterialCardView
+    private lateinit var cardMonthlySpend: MaterialCardView
+    private lateinit var cardTrends: MaterialCardView
+    private lateinit var chartMonthlySpend: BarChartView
+    private lateinit var chartCategory: CategoryBarView
+    private lateinit var chartFuelPrice: LineChartView
+    private lateinit var chartMileage: LineChartView
+    private lateinit var tvFuelPriceHeader: TextView
+    private lateinit var tvMileageTrendHeader: TextView
     private lateinit var categoryContainer: LinearLayout
 
     enum class TimeRange(val labelResId: Int) {
@@ -103,6 +111,14 @@ class ExpensesFragment : Fragment() {
         tvFuelFills = view.findViewById(R.id.tvFuelFills)
         tvNoFuelData = view.findViewById(R.id.tvNoFuelData)
         cardCategoryBreakdown = view.findViewById(R.id.cardCategoryBreakdown)
+        cardMonthlySpend = view.findViewById(R.id.cardMonthlySpend)
+        cardTrends = view.findViewById(R.id.cardTrends)
+        chartMonthlySpend = view.findViewById(R.id.chartMonthlySpend)
+        chartCategory = view.findViewById(R.id.chartCategory)
+        chartFuelPrice = view.findViewById(R.id.chartFuelPrice)
+        chartMileage = view.findViewById(R.id.chartMileage)
+        tvFuelPriceHeader = view.findViewById(R.id.tvFuelPriceHeader)
+        tvMileageTrendHeader = view.findViewById(R.id.tvMileageTrendHeader)
         categoryContainer = view.findViewById(R.id.categoryContainer)
 
         adapter = ExpenseAdapter(currencyCode)
@@ -130,6 +146,42 @@ class ExpensesFragment : Fragment() {
             }
         }
 
+    }
+
+    /**
+     * Each chart hides itself when it has nothing to say — an empty axis is worse than no card,
+     * and these series only exist once fuel has been logged with volumes.
+     */
+    private suspend fun loadCharts(vehicleId: Int) {
+        val monthly = viewModel.monthlySpend(vehicleId)
+        val hasSpend = monthly.any { it.second > 0 }
+        cardMonthlySpend.visibility = if (hasSpend) View.VISIBLE else View.GONE
+        if (hasSpend) {
+            chartMonthlySpend.setData(monthly.map { ChartEntry(it.first, it.second) }) {
+                FormatUtil.formatCurrency(it, currencyCode)
+            }
+        }
+
+        val prices = viewModel.fuelPriceSeries(vehicleId)
+        val mileage = viewModel.mileageSeries(vehicleId)
+
+        val showPrices = prices.size >= 2
+        val showMileage = mileage.size >= 2
+        cardTrends.visibility = if (showPrices || showMileage) View.VISIBLE else View.GONE
+
+        tvFuelPriceHeader.visibility = if (showPrices) View.VISIBLE else View.GONE
+        chartFuelPrice.visibility = if (showPrices) View.VISIBLE else View.GONE
+        if (showPrices) {
+            chartFuelPrice.setData(prices) {
+                FormatUtil.formatCurrency(it, currencyCode)
+            }
+        }
+
+        tvMileageTrendHeader.visibility = if (showMileage) View.VISIBLE else View.GONE
+        chartMileage.visibility = if (showMileage) View.VISIBLE else View.GONE
+        if (showMileage) {
+            chartMileage.setData(mileage) { String.format(Locale.getDefault(), "%.1f", it) }
+        }
     }
 
     private fun setupTimeRangeSelector() {
@@ -213,6 +265,7 @@ class ExpensesFragment : Fragment() {
 
             loadFuelStats(vehicle.id)
             loadCategoryBreakdown(vehicle.id, startDate, endDate)
+            loadCharts(vehicle.id)
         }
     }
 
@@ -274,57 +327,17 @@ class ExpensesFragment : Fragment() {
         }
 
         cardCategoryBreakdown.visibility = View.VISIBLE
+        // The proportion bar and its legend carry everything the old text rows did, with the
+        // relative sizes readable at a glance.
         categoryContainer.removeAllViews()
-
-        val totalCost = categories.sumOf { it.totalCost }
-
-        for (category in categories) {
-            val row = LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.HORIZONTAL
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { bottomMargin = 8.dpToPx() }
-            }
-
-            val icon = TextView(requireContext()).apply {
-                text = getCategoryIcon(category.eventType)
-                textSize = 16f
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { marginEnd = 8.dpToPx() }
-            }
-
-            val label = TextView(requireContext()).apply {
-                text = category.eventType.replaceFirstChar { it.uppercase() }
-                textSize = 14f
-                setTextColor(resources.getColor(R.color.text_secondary, null))
-                layoutParams = LinearLayout.LayoutParams(
-                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+        chartCategory.setData(
+            categories.map {
+                ChartEntry(
+                    "${getCategoryIcon(it.eventType)}  ${it.eventType.replaceFirstChar { c -> c.uppercase() }}",
+                    it.totalCost
                 )
             }
-
-            val amount = TextView(requireContext()).apply {
-                text = FormatUtil.formatCurrency(category.totalCost, currencyCode)
-                textSize = 14f
-                setTextColor(resources.getColor(R.color.text_primary, null))
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-            }
-
-            val pct = if (totalCost > 0) (category.totalCost / totalCost * 100) else 0.0
-            val percent = TextView(requireContext()).apply {
-                text = String.format(Locale.getDefault(), " (%.0f%%)", pct)
-                textSize = 12f
-                setTextColor(resources.getColor(R.color.text_secondary, null))
-            }
-
-            row.addView(icon)
-            row.addView(label)
-            row.addView(amount)
-            row.addView(percent)
-            categoryContainer.addView(row)
-        }
+        ) { FormatUtil.formatCurrency(it, currencyCode) }
     }
 
     private fun getCategoryIcon(eventType: String): String = when (eventType.lowercase()) {
