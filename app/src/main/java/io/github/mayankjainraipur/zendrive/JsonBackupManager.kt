@@ -63,7 +63,7 @@ object JsonBackupManager {
             }
 
             val bundle = BackupBundle(
-                schemaVersion = 4,
+                schemaVersion = 5,
                 appVersion = getAppVersion(context),
                 exportedAt = System.currentTimeMillis(),
                 profile = profile?.let { BackupProfile.fromEntity(it) },
@@ -140,7 +140,7 @@ object JsonBackupManager {
         withContext(Dispatchers.IO) {
             val bundle = json.decodeFromString(BackupBundle.serializer(), jsonString)
 
-            require(bundle.schemaVersion in 1..4) {
+            require(bundle.schemaVersion in 1..5) {
                 "Unsupported backup schema version: ${bundle.schemaVersion}"
             }
 

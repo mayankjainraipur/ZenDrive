@@ -140,6 +140,9 @@ data class BackupEvent(
     val date: Long,
     val odometer: Double? = null,
     val cost: Double? = null,
+    val fuelVolume: Double? = null,
+    val pricePerUnit: Double? = null,
+    val isFullTank: Boolean = false,
     val nextDueDate: Long? = null,
     val createdAt: Long
 ) {
@@ -152,6 +155,9 @@ data class BackupEvent(
         date = date,
         odometer = odometer,
         cost = cost,
+        fuelVolume = fuelVolume,
+        pricePerUnit = pricePerUnit,
+        isFullTank = isFullTank,
         nextDueDate = nextDueDate,
         createdAt = createdAt
     )
@@ -166,6 +172,9 @@ data class BackupEvent(
             date = e.date,
             odometer = e.odometer,
             cost = e.cost,
+            fuelVolume = e.fuelVolume,
+            pricePerUnit = e.pricePerUnit,
+            isFullTank = e.isFullTank,
             nextDueDate = e.nextDueDate,
             createdAt = e.createdAt
         )

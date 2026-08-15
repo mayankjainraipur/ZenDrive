@@ -133,6 +133,42 @@
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
+                    <!-- Mileage: the headline number, so it leads -->
+                    <LinearLayout
+                        android:id="@+id/rowMileage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/mileage"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvMileage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/accent"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            tools:text="18.4 km/L" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvMileageHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/mileage_needs_full_tanks"
+                        android:textColor="@color/text_hint"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
                     <!-- Cost per km -->
                     <LinearLayout
                         android:layout_width="match_parent"

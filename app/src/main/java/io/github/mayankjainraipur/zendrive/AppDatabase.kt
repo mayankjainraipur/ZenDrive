@@ -58,6 +58,15 @@ data class VehicleEvent(
     val date: Long,
     val odometer: Double? = null,
     val cost: Double? = null,
+    /** Litres (or gallons) added. Fuel events only; null everywhere else. */
+    val fuelVolume: Double? = null,
+    /** Price per litre/gallon at the time of the fill. */
+    val pricePerUnit: Double? = null,
+    /**
+     * Whether the tank was filled to the brim. Mileage is measured between two full tanks, so
+     * a partial fill contributes its volume to the next full-to-full stretch but cannot end one.
+     */
+    val isFullTank: Boolean = false,
     /** Next due date stored as epoch-millis; null if not applicable */
     val nextDueDate: Long? = null,
     val createdAt: Long = System.currentTimeMillis()
@@ -96,7 +105,7 @@ data class EventMeta(
         Reminder::class,
         BackupRestoreLog::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -262,9 +271,22 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `vehicle_event` ADD COLUMN `fuelVolume` REAL")
+                db.execSQL("ALTER TABLE `vehicle_event` ADD COLUMN `pricePerUnit` REAL")
+                // Existing fuel records have no volume, so they cannot contribute to mileage
+                // either way; false is the honest default rather than a guess about past fills.
+                db.execSQL(
+                    "ALTER TABLE `vehicle_event` ADD COLUMN `isFullTank` INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
+
         /** Single source of truth for the migration chain — the builder and the tests share it. */
         val ALL_MIGRATIONS: Array<Migration> = arrayOf(
-            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
+            MIGRATION_6_7
         )
 
         fun getInstance(context: android.content.Context): AppDatabase {

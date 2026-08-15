@@ -198,8 +198,47 @@ class LogViewModel(
         val avgCostPerKm: Double?,
         val totalFuelCost: Double,
         val totalDistance: Double?,
-        val fillCount: Int
+        val fillCount: Int,
+        /** Distance per unit of fuel (km/L). Null until two full tanks have been recorded. */
+        val avgMileage: Double?,
+        val totalVolume: Double?,
+        val avgPricePerUnit: Double?
     )
+
+    /**
+     * Mileage is only meaningful between two full tanks: that is the only time you know exactly
+     * how much fuel a given distance consumed. Partial fills in between still count towards the
+     * fuel used, they just cannot start or end a measured stretch.
+     *
+     * Returns distance per unit volume, or null when there are fewer than two full fills with the
+     * odometer readings needed to measure between them.
+     */
+    private fun calculateMileage(fuelEvents: List<VehicleEvent>): Double? {
+        val usable = fuelEvents
+            .filter { it.odometer != null && (it.fuelVolume ?: 0.0) > 0 }
+            .sortedBy { it.odometer }
+
+        val fullTankPositions = usable.indices.filter { usable[it].isFullTank }
+        if (fullTankPositions.size < 2) return null
+
+        var measuredDistance = 0.0
+        var consumedVolume = 0.0
+
+        for (n in 1 until fullTankPositions.size) {
+            val from = fullTankPositions[n - 1]
+            val to = fullTankPositions[n]
+            val distance = usable[to].odometer!! - usable[from].odometer!!
+            // Fuel burned over that stretch is everything put in *after* the first full tank,
+            // up to and including the one that fills it again.
+            val volume = (from + 1..to).sumOf { usable[it].fuelVolume ?: 0.0 }
+            if (distance > 0 && volume > 0) {
+                measuredDistance += distance
+                consumedVolume += volume
+            }
+        }
+
+        return if (consumedVolume > 0) measuredDistance / consumedVolume else null
+    }
 
     suspend fun calculateFuelStats(vehicleId: Int): FuelStats {
         val fuelEvents = eventDao.getFuelEventsAsc(vehicleId)
@@ -208,12 +247,24 @@ class LogViewModel(
         var totalFuelCost = 0.0
         fuelEvents.forEach { totalFuelCost += it.cost ?: 0.0 }
 
+        val volumeSum = fuelEvents.sumOf { it.fuelVolume ?: 0.0 }
+        val totalVolume = volumeSum.takeIf { it > 0 }
+        val avgPricePerUnit = totalVolume?.let { v ->
+            // Derived from the totals rather than averaging the per-fill prices, so a big fill
+            // counts for more than a small one.
+            (totalFuelCost / v).takeIf { totalFuelCost > 0 }
+        }
+        val avgMileage = calculateMileage(fuelEvents)
+
         if (withOdometer.size < 2) {
             return FuelStats(
                 avgCostPerKm = null,
                 totalFuelCost = totalFuelCost,
                 totalDistance = null,
-                fillCount = fuelEvents.size
+                fillCount = fuelEvents.size,
+                avgMileage = avgMileage,
+                totalVolume = totalVolume,
+                avgPricePerUnit = avgPricePerUnit
             )
         }
 
@@ -238,7 +289,10 @@ class LogViewModel(
             avgCostPerKm = avgCostPerKm,
             totalFuelCost = totalFuelCost,
             totalDistance = if (totalDistance > 0) totalDistance else null,
-            fillCount = fuelEvents.size
+            fillCount = fuelEvents.size,
+            avgMileage = avgMileage,
+            totalVolume = totalVolume,
+            avgPricePerUnit = avgPricePerUnit
         )
     }
 

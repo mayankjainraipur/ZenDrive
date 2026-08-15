@@ -288,6 +288,18 @@
     <string name="reminder_overdue_days">Overdue by %1$d days</string>
     <string name="reminder_action_done">Mark done</string>
     <string name="reminder_action_snooze">Snooze a day</string>
+    <!-- ═══ Fuel ═══ -->
+    <string name="fuel_volume">Volume (L)</string>
+    <string name="fuel_price_per_unit">Price per L</string>
+    <string name="fuel_full_tank">Filled the tank</string>
+    <string name="fuel_full_tank_hint">Mileage is measured between two full tanks</string>
+    <string name="mileage">Mileage</string>
+    <string name="mileage_value">%1$s km/L</string>
+    <string name="mileage_needs_full_tanks">Record two full-tank fills with odometer readings to see mileage</string>
+    <string name="total_volume">Fuel used</string>
+    <string name="total_volume_value">%1$s L</string>
+    <string name="avg_price_per_unit">Avg price per L</string>
+
     <string name="reminder_generated_title">Managed automatically</string>
     <string name="reminder_generated_event">This reminder comes from an event\'s next due date. Change or clear that date on the event and this updates with it.</string>
     <string name="reminder_generated_document">This reminder comes from a document\'s expiry date. Change or clear that date on the document and this updates with it.</string>

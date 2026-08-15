@@ -42,6 +42,9 @@ class ExpensesFragment : Fragment() {
     private lateinit var cardFuelStats: MaterialCardView
     private lateinit var tvCostPerKm: TextView
     private lateinit var tvCostPerKmLabel: TextView
+    private lateinit var tvMileage: TextView
+    private lateinit var tvMileageHint: TextView
+    private lateinit var rowMileage: LinearLayout
     private lateinit var tvTotalFuelCost: TextView
     private lateinit var tvTotalDistance: TextView
     private lateinit var rowTotalDistance: LinearLayout
@@ -91,6 +94,9 @@ class ExpensesFragment : Fragment() {
         cardFuelStats = view.findViewById(R.id.cardFuelStats)
         tvCostPerKm = view.findViewById(R.id.tvCostPerKm)
         tvCostPerKmLabel = view.findViewById(R.id.tvCostPerKmLabel)
+        tvMileage = view.findViewById(R.id.tvMileage)
+        tvMileageHint = view.findViewById(R.id.tvMileageHint)
+        rowMileage = view.findViewById(R.id.rowMileage)
         tvTotalFuelCost = view.findViewById(R.id.tvTotalFuelCost)
         tvTotalDistance = view.findViewById(R.id.tvTotalDistance)
         rowTotalDistance = view.findViewById(R.id.rowTotalDistance)
@@ -222,6 +228,18 @@ class ExpensesFragment : Fragment() {
 
         val unit = UserPrefs.distanceUnit
         tvCostPerKmLabel.text = getString(R.string.cost_per_km, unit)
+
+        // Mileage needs two full tanks to measure between. Say so when it is missing, rather
+        // than showing a dash the user cannot interpret.
+        if (stats.avgMileage != null) {
+            tvMileage.text = getString(
+                R.string.mileage_value, String.format(Locale.getDefault(), "%.1f", stats.avgMileage)
+            )
+            tvMileageHint.visibility = View.GONE
+        } else {
+            tvMileage.text = "—"
+            tvMileageHint.visibility = if (stats.fillCount > 0) View.VISIBLE else View.GONE
+        }
 
         if (stats.avgCostPerKm != null) {
             tvCostPerKm.text = getString(

@@ -149,6 +149,47 @@ class MigrationTest {
         db.close()
     }
 
+    /** Fuel columns are added to existing events without disturbing what is already recorded. */
+    @Test
+    fun migrate6To7_keepsEventsAndDefaultsFuelColumns() {
+        helper.createDatabase(testDb, 6).apply {
+            execSQL(
+                """
+                INSERT INTO vehicle
+                  (id, name, vehicleNumber, type, fuelType, brand, model, year,
+                   purchaseDate, odometerReading, notes, isArchived, archivedAt,
+                   createdAt, updatedAt)
+                VALUES (1, 'Swift', 'CG04 AB 1234', 'car', 'petrol', 'Maruti', 'Swift', 2019,
+                        NULL, 42000.0, NULL, 0, NULL, 1700000000000, 1700000000000)
+                """.trimIndent()
+            )
+            execSQL(
+                """
+                INSERT INTO vehicle_event
+                  (id, vehicleId, eventType, title, description, date, odometer, cost,
+                   nextDueDate, createdAt)
+                VALUES (1, 1, 'fuel', 'Petrol', NULL, 1700000000000, 42000.0, 2000.0,
+                        NULL, 1700000000000)
+                """.trimIndent()
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(testDb, 7, true, *AppDatabase.ALL_MIGRATIONS)
+
+        db.query(
+            "SELECT title, cost, fuelVolume, pricePerUnit, isFullTank FROM vehicle_event WHERE id = 1"
+        ).use { c ->
+            assertTrue("event row did not survive the migration", c.moveToFirst())
+            assertEquals("Petrol", c.getString(0))
+            assertEquals(2000.0, c.getDouble(1), 0.001)
+            assertTrue("volume should be unknown for a pre-existing fill", c.isNull(2))
+            assertTrue("price should be unknown for a pre-existing fill", c.isNull(3))
+            assertEquals("full-tank must default to false, not a guess", 0, c.getInt(4))
+        }
+        db.close()
+    }
+
     /**
      * Structural validation alone would not catch an identity-hash mismatch — that only surfaces
      * when Room itself opens the database, which is exactly what happens on a user's device.
@@ -156,7 +197,7 @@ class MigrationTest {
     @Test
     fun migratedDatabaseOpensWithRoom() {
         helper.createDatabase(testDb, 4).close()
-        helper.runMigrationsAndValidate(testDb, 6, true, *AppDatabase.ALL_MIGRATIONS).close()
+        helper.runMigrationsAndValidate(testDb, 7, true, *AppDatabase.ALL_MIGRATIONS).close()
 
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val db = Room.databaseBuilder(context, AppDatabase::class.java, testDb)

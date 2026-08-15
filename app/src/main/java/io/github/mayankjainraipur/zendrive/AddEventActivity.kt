@@ -36,6 +36,10 @@ class AddEventActivity : AppCompatActivity() {
     private lateinit var etCost: TextInputEditText
     private lateinit var etOdometer: TextInputEditText
     private lateinit var etNextDueDate: TextInputEditText
+    private lateinit var fuelSection: LinearLayout
+    private lateinit var etFuelVolume: TextInputEditText
+    private lateinit var etPricePerUnit: TextInputEditText
+    private lateinit var switchFullTank: com.google.android.material.materialswitch.MaterialSwitch
     private lateinit var metaContainer: LinearLayout
     private lateinit var btnAddMeta: MaterialButton
     private lateinit var btnSaveEvent: MaterialButton
@@ -53,6 +57,11 @@ class AddEventActivity : AppCompatActivity() {
         etDate = findViewById(R.id.etDate)
         etCost = findViewById(R.id.etCost)
         etOdometer = findViewById(R.id.etOdometer)
+        fuelSection = findViewById(R.id.fuelSection)
+        etFuelVolume = findViewById(R.id.etFuelVolume)
+        etPricePerUnit = findViewById(R.id.etPricePerUnit)
+        switchFullTank = findViewById(R.id.switchFullTank)
+        setupFuelSection()
         etNextDueDate = findViewById(R.id.etNextDueDate)
         metaContainer = findViewById(R.id.metaContainer)
         btnAddMeta = findViewById(R.id.btnAddMeta)
@@ -114,6 +123,10 @@ class AddEventActivity : AppCompatActivity() {
                 etDate.setText(dateFormat.format(event.date))
                 etCost.setText(event.cost?.takeIf { it > 0 }?.let { formatDecimal(it) }.orEmpty())
                 etOdometer.setText(event.odometer?.takeIf { it > 0 }?.let { formatDecimal(it) }.orEmpty())
+                etFuelVolume.setText(event.fuelVolume?.takeIf { it > 0 }?.let { formatDecimal(it) }.orEmpty())
+                etPricePerUnit.setText(event.pricePerUnit?.takeIf { it > 0 }?.let { formatDecimal(it) }.orEmpty())
+                switchFullTank.isChecked = event.isFullTank
+                updateFuelSectionVisibility()
                 if (event.nextDueDate != null) {
                     etNextDueDate.setText(dateFormat.format(event.nextDueDate))
                 } else {
@@ -183,6 +196,13 @@ class AddEventActivity : AppCompatActivity() {
         val cost = costStr.toDoubleOrNull()
         val odometer = odometerStr.toDoubleOrNull()
 
+        // Only recorded for fuel events; the section is hidden for anything else, and stale
+        // values from a type switch would otherwise be saved against a service record.
+        val isFuelEvent = eventType.equals("fuel", ignoreCase = true)
+        val fuelVolume = if (isFuelEvent) etFuelVolume.text?.toString()?.toDoubleOrNull() else null
+        val pricePerUnit = if (isFuelEvent) etPricePerUnit.text?.toString()?.toDoubleOrNull() else null
+        val isFullTank = isFuelEvent && switchFullTank.isChecked
+
         val extraMetaList = metaFieldViews.mapNotNull { view ->
             val key = view.findViewById<TextInputEditText>(R.id.etMetaKey).text.toString().trim()
             val value = view.findViewById<TextInputEditText>(R.id.etMetaValue).text.toString().trim()
@@ -199,7 +219,10 @@ class AddEventActivity : AppCompatActivity() {
                     date = eventDateMillis,
                     cost = cost,
                     odometer = odometer,
-                    nextDueDate = nextDueDateMillis
+                    nextDueDate = nextDueDateMillis,
+                    fuelVolume = fuelVolume,
+                    pricePerUnit = pricePerUnit,
+                    isFullTank = isFullTank
                 )
                 db.vehicleEventDao().updateEvent(updated)
                 db.eventMetaDao().deleteAllMetaForEvent(editingEventId)
@@ -221,7 +244,10 @@ class AddEventActivity : AppCompatActivity() {
                     date = eventDateMillis,
                     cost = cost,
                     odometer = odometer,
-                    nextDueDate = nextDueDateMillis
+                    nextDueDate = nextDueDateMillis,
+                    fuelVolume = fuelVolume,
+                    pricePerUnit = pricePerUnit,
+                    isFullTank = isFullTank
                 )
                 val newId = db.vehicleEventDao().insertEvent(newEvent).toInt()
                 if (extraMetaList.isNotEmpty()) {
@@ -239,6 +265,41 @@ class AddEventActivity : AppCompatActivity() {
             ReminderSync.reconcile(db)
             finish()
         }
+    }
+
+    /** Fuel fields only apply to a fuel event, and would be noise on a service or tax record. */
+    private fun setupFuelSection() {
+        val unit = UserPrefs.distanceUnit
+        findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.layoutOdometer)
+            ?.suffixText = unit
+
+        actvEventType.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) = updateFuelSectionVisibility()
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+        })
+
+        // Volume x price is the cost, so fill it in rather than making the user do the sum.
+        // Only when cost is still empty, so a typed figure is never overwritten.
+        val recalcCost = object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) {
+                if (etCost.text?.isNotBlank() == true) return
+                val volume = etFuelVolume.text?.toString()?.toDoubleOrNull() ?: return
+                val price = etPricePerUnit.text?.toString()?.toDoubleOrNull() ?: return
+                etCost.setText(String.format(Locale.getDefault(), "%.2f", volume * price))
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+        }
+        etFuelVolume.addTextChangedListener(recalcCost)
+        etPricePerUnit.addTextChangedListener(recalcCost)
+    }
+
+    private fun updateFuelSectionVisibility() {
+        val isFuel = actvEventType.text?.toString()?.trim()
+            ?.equals("fuel", ignoreCase = true) == true
+        fuelSection.visibility = if (isFuel) View.VISIBLE else View.GONE
     }
 
     private suspend fun syncVehicleOdometer(db: AppDatabase, odometer: Double?) {
