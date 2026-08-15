@@ -1,9 +1,30 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
 }
+
+// Release signing credentials come from keystore.properties (gitignored) or the environment,
+// never from this file. When neither is present the release build is simply left unsigned, so
+// a fresh clone still builds.
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
+}
+
+fun signingValue(key: String, envName: String): String? =
+    (keystoreProps.getProperty(key) ?: System.getenv(envName))?.takeIf { it.isNotBlank() }
+
+val releaseStoreFile = signingValue("storeFile", "ZENDRIVE_STORE_FILE")
+val releaseStorePassword = signingValue("storePassword", "ZENDRIVE_STORE_PASSWORD")
+val releaseKeyAlias = signingValue("keyAlias", "ZENDRIVE_KEY_ALIAS")
+val releaseKeyPassword = signingValue("keyPassword", "ZENDRIVE_KEY_PASSWORD")
+
+val hasReleaseSigning = releaseStoreFile != null && releaseStorePassword != null &&
+    releaseKeyAlias != null && releaseKeyPassword != null
 
 android {
     namespace = "io.github.mayankjainraipur.zendrive"
@@ -25,10 +46,24 @@ android {
         }
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
