@@ -36,6 +36,7 @@ class AddDocumentActivity : AppCompatActivity() {
     private var selectedMimeType: String? = null
     private var selectedFileSize: Long? = null
     private var expiryDateMillis: Long? = null
+    private var selectedPreset: DocumentPreset? = null
     private var committed = false
     private val dateFormat get() = SimpleDateFormat(UserPrefs.dateFormatPattern, Locale.getDefault())
 
@@ -71,10 +72,26 @@ class AddDocumentActivity : AppCompatActivity() {
 
         toolbar.setNavigationOnClickListener { finish() }
 
-        val docTypes = resources.getStringArray(R.array.document_types)
+        val presets = DocumentPreset.entries
         actvDocumentType.setAdapter(
-            ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, docTypes)
+            ArrayAdapter(
+                this,
+                android.R.layout.simple_dropdown_item_1line,
+                presets.map { getString(it.labelRes) }
+            )
         )
+
+        // Choosing a type offers the expiry that type normally runs on, so the common case needs
+        // no arithmetic. Only ever fills a blank field — a date already entered is left alone.
+        actvDocumentType.setOnItemClickListener { _, _, position, _ ->
+            selectedPreset = presets[position]
+            val suggested = selectedPreset?.suggestedExpiry()
+            if (suggested != null && expiryDateMillis == null) {
+                expiryDateMillis = suggested
+                etExpiryDate.setText(dateFormat.format(suggested))
+                Toast.makeText(this, R.string.doc_expiry_suggested, Toast.LENGTH_SHORT).show()
+            }
+        }
 
         editingDocId = intent.getIntExtra("documentId", -1)
 
@@ -106,10 +123,14 @@ class AddDocumentActivity : AppCompatActivity() {
                 val vehicle = db.vehicleDao().getVehicleById(vehicleId)
                 if (vehicle != null) toolbar.subtitle = vehicle.name
 
+                // Map the stored key back to its label; fall back to the raw value for rows
+                // saved before presets existed.
+                selectedPreset = DocumentPreset.fromKey(doc.documentType)
                 actvDocumentType.setText(
-                    doc.documentType.replaceFirstChar { c ->
-                        if (c.isLowerCase()) c.titlecase(Locale.getDefault()) else c.toString()
-                    },
+                    selectedPreset?.let { getString(it.labelRes) }
+                        ?: doc.documentType.replaceFirstChar { c ->
+                            if (c.isLowerCase()) c.titlecase(Locale.getDefault()) else c.toString()
+                        },
                     false
                 )
                 etTitle.setText(doc.title)
@@ -226,7 +247,9 @@ class AddDocumentActivity : AppCompatActivity() {
     }
 
     private fun saveDocument(db: AppDatabase) {
-        val docType = actvDocumentType.text.toString().trim()
+        // Store the stable preset key, not the shown label, so a wording change never orphans
+        // existing rows.
+        val docType = selectedPreset?.key ?: actvDocumentType.text.toString().trim()
         val title = etTitle.text.toString().trim()
         val notes = etNotes.text.toString().trim()
 

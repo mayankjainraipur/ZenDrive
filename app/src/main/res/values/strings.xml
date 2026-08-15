@@ -389,14 +389,18 @@
 
     <string name="clear_expiry">Clear</string>
 
-    <string-array name="document_types">
-        <item>Insurance</item>
-        <item>Registration</item>
-        <item>PUC</item>
-        <item>Invoice</item>
-        <item>Warranty</item>
-        <item>Other</item>
-    </string-array>
+    <!-- Document types are now driven by DocumentPreset, which carries each renewal cycle. -->
+    <string name="doc_preset_rc">Registration (RC)</string>
+    <string name="doc_preset_insurance">Insurance</string>
+    <string name="doc_preset_puc">PUC certificate</string>
+    <string name="doc_preset_fitness">Fitness certificate</string>
+    <string name="doc_preset_permit">Permit</string>
+    <string name="doc_preset_road_tax">Road tax</string>
+    <string name="doc_preset_dl">Driving licence</string>
+    <string name="doc_preset_invoice">Invoice</string>
+    <string name="doc_preset_warranty">Warranty</string>
+    <string name="doc_preset_other">Other</string>
+    <string name="doc_expiry_suggested">Expiry suggested from the usual renewal cycle — change it if yours differs</string>
 
     <!-- App Lock / Biometric -->
     <string name="app_lock">App Lock</string>
