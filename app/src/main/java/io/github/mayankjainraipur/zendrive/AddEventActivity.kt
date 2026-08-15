@@ -24,7 +24,7 @@ class AddEventActivity : AppCompatActivity() {
     private var editingEventId: Int = -1
     private var eventDateMillis: Long = System.currentTimeMillis()
     private var nextDueDateMillis: Long? = null
-    private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+    private val dateFormat get() = SimpleDateFormat(UserPrefs.dateFormatPattern, Locale.getDefault())
 
     private val metaFieldViews = mutableListOf<View>()
 

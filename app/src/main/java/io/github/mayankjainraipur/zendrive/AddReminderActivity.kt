@@ -20,7 +20,7 @@ class AddReminderActivity : AppCompatActivity() {
     private var editingReminderId: Int = -1
     private var preselectedVehicleId: Int = -1
     private var dueDateMillis: Long = System.currentTimeMillis()
-    private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+    private val dateFormat get() = SimpleDateFormat(UserPrefs.dateFormatPattern, Locale.getDefault())
 
     private var vehicles: List<Vehicle> = emptyList()
     private var selectedVehicleId: Int = -1

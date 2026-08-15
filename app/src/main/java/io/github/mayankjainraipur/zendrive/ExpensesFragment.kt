@@ -41,6 +41,7 @@ class ExpensesFragment : Fragment() {
 
     private lateinit var cardFuelStats: MaterialCardView
     private lateinit var tvCostPerKm: TextView
+    private lateinit var tvCostPerKmLabel: TextView
     private lateinit var tvTotalFuelCost: TextView
     private lateinit var tvTotalDistance: TextView
     private lateinit var rowTotalDistance: LinearLayout
@@ -89,6 +90,7 @@ class ExpensesFragment : Fragment() {
 
         cardFuelStats = view.findViewById(R.id.cardFuelStats)
         tvCostPerKm = view.findViewById(R.id.tvCostPerKm)
+        tvCostPerKmLabel = view.findViewById(R.id.tvCostPerKmLabel)
         tvTotalFuelCost = view.findViewById(R.id.tvTotalFuelCost)
         tvTotalDistance = view.findViewById(R.id.tvTotalDistance)
         rowTotalDistance = view.findViewById(R.id.rowTotalDistance)
@@ -218,10 +220,14 @@ class ExpensesFragment : Fragment() {
 
         cardFuelStats.visibility = View.VISIBLE
 
+        val unit = UserPrefs.distanceUnit
+        tvCostPerKmLabel.text = getString(R.string.cost_per_km, unit)
+
         if (stats.avgCostPerKm != null) {
             tvCostPerKm.text = getString(
                 R.string.cost_per_km_value,
-                FormatUtil.formatCurrency(stats.avgCostPerKm, currencyCode)
+                FormatUtil.formatCurrency(stats.avgCostPerKm, currencyCode),
+                unit
             )
             tvNoFuelData.visibility = View.GONE
         } else {

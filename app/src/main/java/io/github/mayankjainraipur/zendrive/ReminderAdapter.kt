@@ -25,7 +25,7 @@ class ReminderAdapter(
             override fun areContentsTheSame(a: Reminder, b: Reminder) = a == b
         }
 
-        private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        private val dateFormat get() = SimpleDateFormat(UserPrefs.dateFormatPattern, Locale.getDefault())
     }
 
     inner class VH(view: View) : RecyclerView.ViewHolder(view) {

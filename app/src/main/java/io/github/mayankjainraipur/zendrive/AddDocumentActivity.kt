@@ -37,7 +37,7 @@ class AddDocumentActivity : AppCompatActivity() {
     private var selectedFileSize: Long? = null
     private var expiryDateMillis: Long? = null
     private var committed = false
-    private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+    private val dateFormat get() = SimpleDateFormat(UserPrefs.dateFormatPattern, Locale.getDefault())
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var actvDocumentType: AutoCompleteTextView

@@ -12,26 +12,48 @@ class ZenDriveApp : Application() {
     lateinit var database: AppDatabase
         private set
 
+    /**
+     * For writes that must not die with the screen that started them — changing the theme
+     * recreates the activity, which would cancel a `lifecycleScope` job mid-write.
+     */
+    val appScope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO
+    )
+
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // Read the cached theme and apply it before any activity inflates, or the first frame
+        // paints the wrong palette.
+        UserPrefs.init(this)
+        UserPrefs.applyTheme()
         DynamicColors.applyToActivitiesIfAvailable(this)
         database = AppDatabase.getInstance(this)
         createNotificationChannels()
         ReminderScheduler.schedule(this)
         scheduleAutoBackupIfEnabled()
         adoptLegacyDocuments()
+        mirrorProfilePrefs()
+    }
+
+    /** Keeps [UserPrefs] in step with the profile row, including after a restore. */
+    private fun mirrorProfilePrefs() {
+        appScope.launch {
+            database.userProfileDao().observeProfile().collect { profile ->
+                if (profile != null) UserPrefs.mirror(profile)
+            }
+        }
     }
 
     /** Rescues documents saved before files were copied in, while their URIs still resolve. */
     private fun adoptLegacyDocuments() {
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+        appScope.launch {
             runCatching { DocumentStore.adoptLegacyDocuments(this@ZenDriveApp, database) }
         }
     }
 
     private fun scheduleAutoBackupIfEnabled() {
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+        appScope.launch {
             val profile = database.userProfileDao().getProfile()
             if (profile?.backupEnabled == true) {
                 DriveAutoBackupWorker.schedule(this@ZenDriveApp)

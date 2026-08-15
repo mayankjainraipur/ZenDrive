@@ -22,7 +22,7 @@ class AddVehicleActivity : AppCompatActivity() {
     private lateinit var viewModel: LogViewModel
     private var purchaseDateMillis: Long? = null
     private var editVehicleId: Int = -1
-    private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+    private val dateFormat get() = SimpleDateFormat(UserPrefs.dateFormatPattern, Locale.getDefault())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

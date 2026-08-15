@@ -279,14 +279,14 @@
 
     <!-- Fuel Analytics -->
     <string name="fuel_efficiency">Fuel Efficiency</string>
-    <string name="cost_per_km">Cost per km</string>
+    <string name="cost_per_km">Cost per %1$s</string>
     <string name="total_fuel_cost">Total Fuel Cost</string>
     <string name="total_distance">Total Distance</string>
     <string name="fuel_fills">Fuel Fills</string>
     <string name="category_breakdown">Category Breakdown</string>
     <string name="no_fuel_data">No fuel records yet. Add fuel events with odometer readings to see efficiency stats.</string>
     <string name="fuel_fills_count">%1$d fills</string>
-    <string name="cost_per_km_value">%1$s / km</string>
+    <string name="cost_per_km_value">%1$s / %2$s</string>
 
     <!-- Vehicle detail labels -->
     <string name="label_brand">Brand</string>

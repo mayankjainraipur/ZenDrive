@@ -23,7 +23,7 @@ class DocumentAdapter : ListAdapter<VehicleDocument, DocumentAdapter.VH>(DIFF) {
             override fun areContentsTheSame(a: VehicleDocument, b: VehicleDocument) = a == b
         }
 
-        private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        private val dateFormat get() = SimpleDateFormat(UserPrefs.dateFormatPattern, Locale.getDefault())
 
         private const val EXPIRY_SOON_DAYS = 30L
     }

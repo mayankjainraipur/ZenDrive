@@ -50,7 +50,7 @@ class SyncFragment : Fragment() {
     private lateinit var btnDriveBackup: Button
     private lateinit var btnDriveRestore: Button
 
-    private val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+    private val dateFormat get() = SimpleDateFormat("${UserPrefs.dateFormatPattern}, HH:mm", Locale.getDefault())
 
     private val exportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")

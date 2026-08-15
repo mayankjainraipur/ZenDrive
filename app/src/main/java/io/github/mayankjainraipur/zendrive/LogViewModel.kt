@@ -292,6 +292,12 @@ class LogViewModel(
                 email = email.trim(),
                 mobileNumber = mobile?.trim()?.takeIf { it.isNotBlank() },
                 preferredCurrencyCode = trimmedCurrency,
+                // Carried through explicitly — this form doesn't edit them, and rebuilding the
+                // row without them would reset the user's preferences to the defaults.
+                distanceUnit = existing?.distanceUnit ?: "km",
+                dateFormatPattern = existing?.dateFormatPattern ?: "dd MMM yyyy",
+                themeMode = existing?.themeMode ?: UserPrefs.THEME_DARK,
+                reminderLeadDays = existing?.reminderLeadDays ?: 3,
                 appLockEnabled = existing?.appLockEnabled ?: false,
                 backupEnabled = existing?.backupEnabled ?: false,
                 lastBackupAt = existing?.lastBackupAt,

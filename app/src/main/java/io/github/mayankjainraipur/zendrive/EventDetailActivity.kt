@@ -17,7 +17,7 @@ import java.util.Locale
 class EventDetailActivity : AppCompatActivity() {
 
     private var eventId: Int = -1
-    private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+    private val dateFormat get() = SimpleDateFormat(UserPrefs.dateFormatPattern, Locale.getDefault())
     private var currencyCode: String = "INR"
 
     override fun onCreate(savedInstanceState: Bundle?) {
